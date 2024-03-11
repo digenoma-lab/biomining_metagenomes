@@ -1,0 +1,43 @@
+---
+title: "Systemix Profiling Article: Filtering MAG-SMAG Metadata"
+author: "Moises A. Rojas"
+date: "2024-01-17"
+output: html_document
+---
+
+```{r loadmd}
+library(dplyr)
+
+# Load Biomining MAGs and SMAG bacterial metadata
+mags_md <- read.csv("4-mags-smag/mags_metadata_bac.tsv", sep = "\t",
+                    header = TRUE, stringsAsFactors = FALSE)
+
+# Choose a set of bins:
+# 1. select other ecosystems keeping only high-quality bins;
+# 2. sort them by completeness and group them by ecosystem
+# 3. remove duplicates based on classification (after exploring its variability)
+# 4. select top bins for each ecosystem
+mags_md_sel <- mags_md %>%
+  filter(ecosystem != "Biomining" & contamination <= 5) %>%
+  arrange(desc(completeness)) %>%
+  group_by(ecosystem) %>%
+  select(mag_name, mag_id, completeness, contamination, ecosystem, phylum, class, order, family, genus, species) %>%
+  distinct(order, family, genus, species, .keep_all = TRUE) %>%
+  slice(1:70)
+
+# Merge MAG name and id
+mags_md_sel <- mags_md_sel %>%
+  mutate(bin = paste0(mag_name, ".", mag_id)) %>%
+  relocate(bin, .before = mag_name) %>%
+  select(-c("mag_name", "mag_id"))
+
+#explore selection..
+#mags_md_sel %>% filter(species != "") %>% nrow()
+
+# Save list of bins to file
+write.table(mags_md_sel$bin, "4-mags-smag/smag_filtered_bins.tsv",
+            quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+# Clean memory
+rm(mags_md, mags_md_sel)
+```

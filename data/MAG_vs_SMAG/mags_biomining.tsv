@@ -1,0 +1,45 @@
+mag_name	mag_id	completeness	contamination	strain_heterogeneity	N50	kingdom	phylum	class	order	family	genus	species	ecosystem	continent
+SPAdes-MaxBin2Refined-S15	001_sub	91.5	1.82	0	46608	Bacteria	Nitrospirota_A	Leptospirillia	Leptospirillales	Leptospirillaceae			Biomining	South America
+SPAdes-MaxBin2Refined-S15	004_sub	48.04	0	0	46312	Bacteria	Acidobacteriota	Acidobacteriae	Acidobacteriales	Acidobacteriaceae	Acidisarcina		Biomining	South America
+SPAdes-MaxBin2Refined-S15	010	97.76	17.11	0	47570	Bacteria	Proteobacteria	Gammaproteobacteria	Acidiferrobacterales	Acidiferrobacteraceae	Acidiferrobacter		Biomining	South America
+SPAdes-MaxBin2Refined-S15	019_sub	91.58	1.74	75	12950	Bacteria	Proteobacteria	Alphaproteobacteria	Acetobacterales	Acetobacteraceae	Palsa-883		Biomining	South America
+SPAdes-MaxBin2Refined-S15	021_sub	90.97	0.9	0	17549	Bacteria	Acidobacteriota	Acidobacteriae	Acidobacteriales	Acidobacteriaceae			Biomining	South America
+SPAdes-MaxBin2Refined-S15	026_sub	86.99	17.82	28.12	11054	Bacteria	Acidobacteriota	Acidobacteriae	Acidobacteriales	Acidobacteriaceae			Biomining	South America
+SPAdes-MaxBin2Refined-S15	033_sub	96.71	2.74	23.08	28699	Bacteria	Proteobacteria	Alphaproteobacteria	Rhizobiales	Beijerinckiaceae	Methylovirgula		Biomining	South America
+SPAdes-MaxBin2Refined-S15	034_sub	95.63	3.96	0	58590	Bacteria	Actinobacteriota	Actinomycetia	Mycobacteriales	CAJCIY01			Biomining	South America
+SPAdes-MaxBin2Refined-S15	037_sub	82.09	3.28	22.22	20306	Bacteria	Acidobacteriota	Acidobacteriae	Acidobacteriales	Acidobacteriaceae			Biomining	South America
+SPAdes-MaxBin2Refined-S15	043_sub	90.02	1.82	0	46941	Bacteria	Nitrospirota_A	Leptospirillia	Leptospirillales	Leptospirillaceae			Biomining	South America
+SPAdes-MaxBin2Refined-S15	057_sub	74.23	3.55	6.67	2834	Bacteria	Proteobacteria	Alphaproteobacteria	Acetobacterales	Acetobacteraceae	Rhodopila		Biomining	South America
+SPAdes-MaxBin2Refined-S15	064_sub	83.47	13.31	10.78	1979	Bacteria	Proteobacteria	Gammaproteobacteria	Pseudomonadales	Moraxellaceae	Acinetobacter	Acinetobacter johnsonii	Biomining	South America
+SPAdes-MaxBin2Refined-S15	065_sub	67.42	25.18	1.29	1489	Bacteria	Proteobacteria	Alphaproteobacteria	Sphingomonadales	Sphingomonadaceae	Sphingobium	Sphingobium yanoikuyae	Biomining	South America
+SPAdes-MetaBAT2Refined-S15	11	98.29	0.85	0	74140	Bacteria	Actinobacteriota	Thermoleophilia	Solirubrobacterales	Solirubrobacteraceae	Palsa-465		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	13	98	0	0	157812	Bacteria	Firmicutes_E	Sulfobacillia	Sulfobacillales	Sulfobacillaceae			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	14	91.38	3.85	0	63595	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales				Biomining	South America
+SPAdes-MetaBAT2Refined-S15	15_sub	90.82	4.49	14.29	8004	Bacteria	Proteobacteria	Alphaproteobacteria	Acetobacterales	Acetobacteraceae	Acidisphaera		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	18	93.65	5.17	57.14	7851	Bacteria	Actinobacteriota	Actinomycetia	Mycobacteriales	CAJCIY01			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	19	98.29	1.71	33.33	96562	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	RAAP-2	RAAP-2		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	20	96.18	5.2	18.18	26599	Bacteria	Actinobacteriota	Actinomycetia	Mycobacteriales	CAJCIY01			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	22	98.66	5.12	6.67	41916	Bacteria	Actinobacteriota	Actinomycetia	Streptosporangiales	Streptosporangiaceae	Bog-532		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	26	95.11	2.99	0	32168	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Palsa-688			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	27	80.53	8.96	47.62	5854	Bacteria	Proteobacteria	Gammaproteobacteria	Pseudomonadales	Pseudomonadaceae	Pseudomonas_E	Pseudomonas_E hunanensis	Biomining	South America
+SPAdes-MetaBAT2Refined-S15	38	95.64	1.72	100	71355	Bacteria	Acidobacteriota	Acidobacteriae	Acidobacteriales	Acidobacteriaceae			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	42_sub	97.86	18.8	51.85	43425	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	RAAP-2	Bog-756		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	44_sub	97.86	2.14	0	14314	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae	SCQM01		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	45	99.15	1.28	0	51004	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae	SCQM01		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	46	92.08	0.83	0	47439	Bacteria	Firmicutes_E	Sulfobacillia					Biomining	South America
+SPAdes-MetaBAT2Refined-S15	49	98.72	1.28	0	26686	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae	Acidithrix		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	5	98.29	1.28	0	61919	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae	SCQM01		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	50_sub	91.02	1.92	0	11484	Bacteria	Acidobacteriota	Acidobacteriae	Acidobacteriales	Acidobacteriaceae			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	51	99.15	1.28	0	144859	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae	Ferrithrix		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	56	96.38	4.04	30.77	87326	Bacteria	Actinobacteriota	Actinomycetia	Mycobacteriales	Jatrophihabitantaceae	QHCC01		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	57	92.54	2.01	50	13292	Bacteria	Actinobacteriota	Actinomycetia	Mycobacteriales	CAJCIY01			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	6	96.29	0.5	0	47724	Bacteria	Proteobacteria	Alphaproteobacteria	Acetobacterales	Acetobacteraceae	Acidiphilium		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	61	89.75	1.82	66.67	14037	Bacteria	Firmicutes_E	Sulfobacillia					Biomining	South America
+SPAdes-MetaBAT2Refined-S15	62	88.28	1.98	0	15913	Bacteria	Firmicutes_E	Sulfobacillia					Biomining	South America
+SPAdes-MetaBAT2Refined-S15	67	95.83	4.49	10	70884	Bacteria	Dormibacterota	Dormibacteria	Dormibacterales	Dormibacteraceae			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	68	97.07	2.56	25	24904	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Bog-793			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	69	97.44	2.14	0	91002	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae	SCQM01		Biomining	South America
+SPAdes-MetaBAT2Refined-S15	72	98.29	1.28	0	35266	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	73	99.38	2.85	0	38202	Bacteria	Actinobacteriota	Actinomycetia	Mycobacteriales				Biomining	South America
+SPAdes-MetaBAT2Refined-S15	74	98.29	1.28	0	36841	Bacteria	Actinobacteriota	Acidimicrobiia	Acidimicrobiales	Acidimicrobiaceae			Biomining	South America
+SPAdes-MetaBAT2Refined-S15	75	94.91	0.66	0	15399	Bacteria	Proteobacteria	Alphaproteobacteria	Acetobacterales	Acetobacteraceae			Biomining	South America
