@@ -1,34 +1,40 @@
 ---
-title: "Systemix Profiling Article: Combined MAG-SMAG Analysis"
+title: "Systemix Article: Combined MAG-SMAG Profiling"
 author: "Moises A. Rojas"
-date: "2023-12-01"
+date: "2023-12-01 // mod. Mar 2024"
 output: github_document
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_knit$set(root.dir = '/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/analysis/mags-all/analysis/')
+```{r setup}
+#knitr::opts_knit$set(root.dir = '/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/analysis/mags-all/analysis/')
+knitr::opts_knit$set(root.dir = '/Users/moises/Downloads/mags-all/')
 
 suppressMessages(library(ape)) #tree basics
-suppressMessages(library(treeio))
-suppressMessages(library(ggtree))
-suppressMessages(library(ggplot2))
+suppressMessages(library(treeio)) #join trees
+suppressMessages(library(ggtree)) #tree plotting
+suppressMessages(library(ggplot2)) #plots
 suppressMessages(library(ggtreeExtra)) #geom_fruit
 suppressMessages(library(ggnewscale)) #scales in ggplot2
 suppressMessages(library(ggstar)) #geom_star for ggplot2
-suppressMessages(library(phytools)) #MRCA
 suppressMessages(library(tidyverse)) #strings, dataframes processing
 suppressMessages(library(magrittr)) #pipes %>%
 suppressMessages(library(tidytree)) #trees as dataframes
-suppressMessages(library(RColorBrewer)) #colors palette
-suppressWarnings(library(colorspace))
+suppressMessages(library(RColorBrewer)) #color palettes
+suppressWarnings(library(colorspace)) #colors manipulation
 suppressWarnings(library(patchwork)) #side-by-side plotting
+suppressWarnings(library(openxlsx)) #read excel
+suppressWarnings(library(ComplexHeatmap)) #heatmap
+suppressWarnings(library(PCAtools)) #pca
+suppressWarnings(library(ggbiplot)) #pca plots
+suppressWarnings(library(agricolae)) #fisher's test
+suppressWarnings(library(ggpubr)) #stats & plots
+suppressWarnings(library(dndscv)) #dN/dS of snps
+suppressWarnings(library(clusterProfiler)) #gene enrichment
 ```
 
 ## Prepare and merge MAG-SMAG metadata
 
-```{r magsdata}
-library(openxlsx)
-
+```{r magdata}
 # Read Systemix MAGs taxonomy and QC files
 gtdb_taxonomy <- read.csv("1-taxonomy/gtdbtk_classification.tsv", sep = "\t", stringsAsFactors = FALSE)
 mags_qc <- read.csv("2-statistics/checkm_parsed_bins.tsv", sep = "\t")
@@ -43,26 +49,27 @@ mag_samples <- filter(gtdb_taxonomy, grepl("\\-S15\\.", genome))
 colnames(mag_samples)[1] <- "bin"
 mag_samples <- left_join(mag_samples, mags_qc, by = c("bin"))
 
-# Parse and reorder columns
-mag_samples <- dplyr::select(mag_samples, -c("taxonomy", "gc", "contigs"))
+# Parse columns
+mag_samples <- dplyr::select(mag_samples, -c("taxonomy"))
 mag_samples <- mag_samples %>%
   mutate_if(is.character, function(x) gsub("d__|p__|c__|o__|f__|g__|s__", "", x))
 mag_samples <- mag_samples %>% separate(bin, "\\.", into = c("mag_name", "mag_id"))
-mag_samples <- mag_samples[, c(1, 2, 10, 11, 12, 13, 3, 4, 5, 6, 7, 8, 9)]
 
 # Define final attributes
+mag_samples['mag_num'] <- nrow(mag_samples)
 mag_samples['ecosystem'] <- "Biomining"
 mag_samples['continent'] <- "South America"
 
-# Load SMAG metadata (tables 1 and 2)
+# Load SMAG catalog (metadata from tables 1-2)
 smag_md1 <- read.xlsx("/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/SMAG/Extended_Data_Table_1.xlsx")
 smag_md2 <- read.xlsx("/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/SMAG/Extended_Data_Table_2.xlsx")
 
 # Save attributes
-smag_md1_sel <- smag_md1 %>% dplyr::select("mag_name", "Ecosystem", "Continent")
+smag_md1_sel <- smag_md1 %>%
+  dplyr::select("mag_name", "mag_num", "Ecosystem", "Continent")
 smag_md2_sel <- smag_md2 %>%
   dplyr::select("user_genome", "completeness", "contamination",
-                "strain_heterogeneity", "N50", "classification",
+                "strain_heterogeneity", "length", "N50", "classification",
                 "phylum", "class", "order", "family", "genus", "species")
 
 # Merge selections and parse taxa
@@ -72,72 +79,76 @@ smag_data <- smag_data %>%
   mutate_if(is.character, function(x) gsub("d__|p__|c__|o__|f__|g__|s__", "", x))
 
 # Rename columns
+colnames(smag_data)[6] <- "genome_size"
+colnames(smag_data)[8] <- "kingdom"
+colnames(smag_data)[16] <- "ecosystem"
+colnames(smag_data)[17] <- "continent"
+
 colnames(smag_data)[7] <- "kingdom"
 colnames(smag_data)[14] <- "ecosystem"
 colnames(smag_data)[15] <- "continent"
 
-# Clean memory
-rm(smag_md1, smag_md2, smag_md1_sel, smag_md2_sel, mags_qc)
-
 # Merge metadata and save to file
 mags_metadata <- merge(mag_samples, smag_data, all = TRUE)
 if (file.exists("4-mags-smag/mags_metadata.tsv") == FALSE) {
-  write.table(mags_metadata, "4-mags-smag/mags_metadata.tsv",
-              sep = "\t", quote = FALSE, row.names = FALSE)
+  write.table(mags_metadata, "4-mags-smag/mags_metadata.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
 }
 
 # Save parsed SMAG metadata
 if (file.exists("4-mags-smag/smag_data.tsv") == FALSE) {
-  write.table(smag_data, "4-mags-smag/smag_data.tsv",
-              sep = "\t", quote = FALSE, row.names = FALSE)
+  write.table(smag_data, "4-mags-smag/smag_data.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
 }
+
+# Save biomining metadata (S15)
+if (file.exists("4-mags-smag/mags_biomining.tsv") == FALSE) {
+  write.table(mag_samples, "4-mags-smag/mags_biomining.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+}
+
+# Clean memory
+rm(smag_md1, smag_md2, smag_md1_sel, smag_md2_sel)
+#rm(list = ls(pattern = "^kegg_hm_cols_"))
 ```
 
-## In-depth taxonomic analysis of MAG-SMAG
+## Section 1: In-depth taxonomy analysis 
 
-```{r magstaxa}
+### Biomining MAGs vs SMAG taxa comparison
+
+```{r magcombtaxa}
 # Biomining provides a new phylum -> Nitrospirota_A
 mag_samples_new_phy <- mag_samples[!(mag_samples$phylum %in% smag_data$phylum), ]
 
 # Explore metadata: some bins are not assigned to ecosystems
 mags_metadata %>%
-  filter(is.na(ecosystem)) %>%
-  group_by(mag_name) %>%
+  dplyr::filter(is.na(ecosystem)) %>%
+  dplyr::group_by(mag_name) %>%
   dplyr::summarise() #n=401
 
 # Keep only bacteria and defined ecosystems (discard archaea kingdom and non-NA eco.)
 mags_metadata_bac <- mags_metadata %>%
-  filter(kingdom == "Bacteria" & !is.na(ecosystem)) #n=32975
+  dplyr::filter(kingdom == "Bacteria" & !is.na(ecosystem)) #n=32975
 
-# Save to file
+# Save bacterial metadata to file
 if (file.exists("4-mags-smag/mags_metadata_bac.tsv") == FALSE) {
-  write.table(mags_metadata_bac, "4-mags-smag/mags_metadata_bac.tsv",
-              sep = "\t", quote = FALSE, row.names = FALSE)
+  write.table(mags_metadata_bac, "4-mags-smag/mags_metadata_bac.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
 }
 
 # Select top phyla and plot a histogram
 mags_md_top_phy <- table(mags_metadata_bac$phylum) %>%
   sort(TRUE) %>%
-  head(n = 30) %>%
+  head(n = 40) %>%
   as.data.frame() %>%
   dplyr::rename(phy_top = Var1, freq = Freq)
 
-plot_depth_top_phyla <- ggplot(mags_md_top_phy, aes(x = reorder(phy_top, freq), y = freq)) +
+plot_depth_top_phyla <- ggplot(mags_md_top_phy, aes(x = freq, y = reorder(phy_top, freq))) +
   geom_bar(stat = "identity", fill = "#459682") +
-  geom_text(aes(label = freq), vjust = 0.5, hjust = -0.5, size = 3) +
-  labs(x = "Phylum", y = "Number") +
-  scale_y_continuous(limits = c(0, 10000)) +
-  theme_classic() +
-  coord_flip()
+  geom_text(aes(label = freq), vjust = 0.5, hjust = -0.5, size = 2.5) +
+  labs(x = "Number", y = "Phylum") +
+  scale_x_continuous(limits = c(0, 10000)) +
+  theme_classic()
 ggsave("plot_md_top_phyla.pdf", plot_depth_top_phyla, height = 7, width = 6)
 
-## Filtering metadata
-
+# Filter metadata..
 # Set colors for ecosystem
-#mags_colors_eco <- vector()
-#for (i in 1:length(kegg_colors_eco)) {
-#  mags_colors_eco <- append(mags_colors_eco, kegg_colors_eco[[i]])
-#}
 #mags_colors_eco <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(mags_metadata_bac$ecosystem)))
 #mags_colors_eco <- sample(mags_colors_eco)
 mags_colors_eco <- c("#1F78B4", "#FF7F00", "#B2DF8A", "#E31A1C", "#A6CEE3",
@@ -146,32 +157,33 @@ mags_colors_eco <- c("#1F78B4", "#FF7F00", "#B2DF8A", "#E31A1C", "#A6CEE3",
 # Which bacteria from biomining sites are annotated as known?
 mags_depth_spec_biom <- mags_metadata_bac %>%
   dplyr::select(mag_name, family, genus, species, ecosystem) %>%
-  filter(species != "" & ecosystem == "Biomining")
+  dplyr::filter(species != "" & ecosystem == "Biomining")
 
 #are they present in other SMAG?
 mags_depth_spec <- mags_metadata_bac[mags_metadata_bac$species %in%
                                      mags_depth_spec_biom$species, ] %>%
   dplyr::select(mag_name, mag_id, phylum, family, genus, species, ecosystem, continent) %>%
-  group_by(ecosystem)
+  dplyr::group_by(ecosystem)
 
 plot_depth_spec <- ggplot(mags_depth_spec) +
   geom_bar(aes(x = species, fill = phylum)) +
-  labs(x = "", y = "Number of known species") +
-  scale_fill_manual(values = "#DD7E8B") +
+  labs(x = "", y = "Number of kSGBs from biomining") +
+  scale_fill_manual(values = "#78Acc2") +
   theme_classic() +
   theme(legend.title = element_blank(),
-        legend.position = c(0.85, 0.05),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-  facet_wrap(.~ecosystem)
-ggsave("plot_md_biom_species.pdf", plot_depth_spec, height = 6, width = 8)
+        legend.position = c(0.88, 0.12),
+        strip.background = element_blank()) +#axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
+  facet_grid(.~ecosystem) +
+  coord_flip()
+ggsave("plot_md_biom_species.pdf", plot_depth_spec, height = 2.5, width = 8)
 
 # Which ecosystem has more known species (# and ratio)?
 mags_depth_spec_eco <- mags_metadata_bac %>%
   dplyr::filter(species != "") %>%
-  group_by(species, ecosystem) %>%
+  dplyr::group_by(species, ecosystem) %>%
   dplyr::summarise(count_sp = table(species)) %>% #.groups = "drop"
   ungroup() %>%
-  group_by(ecosystem) %>%
+  dplyr::group_by(ecosystem) %>%
   dplyr::summarise(count_eco = sum(count_sp)) %>%
   dplyr::arrange(desc(count_eco)) #max 1821
 
@@ -201,10 +213,10 @@ ggsave("plot_md_species_eco.pdf", plot_depth_spec_eco, height = 7, width = 6)
 
 # What about unknown/known species-level genome bins (SGBs) at phylum level?
 mags_depth_sgbs <- mags_metadata_bac %>%
-  group_by(phylum, species) %>%
+  dplyr::group_by(phylum, species) %>%
   dplyr::summarise(n_spe = n()) %>%
   ungroup() %>%
-  group_by(phylum) %>%
+  dplyr::group_by(phylum) %>%
   dplyr::mutate(t_phy = sum(n_spe)) %>% ###
   dplyr::filter(species == "") %>%
   dplyr::mutate(diff_k = t_phy - n_spe) %>%
@@ -215,8 +227,7 @@ mags_depth_sgbs <- mags_metadata_bac %>%
 plot_depth_sgbs <- ggplot(mags_depth_sgbs[1:60, ],
                           aes(x = reorder(phylum, tot), y = tot, fill = cond)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"),
-                    values = c("#DD7E8B", "#459682")) +
+  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#DD7E8B", "#459682")) +
   scale_y_continuous(limits = c(0, 8000)) +
   labs(x = "Phylum", y = "Number of species") +
   theme_classic() +
@@ -234,15 +245,14 @@ mags_depth_sgbs_p <- mags_depth_sgbs %>%
 plot_depth_sgbs_p <- ggplot(mags_depth_sgbs_p[1:60, ],
                             aes(x = reorder(phylum, t_phy), y = tot_p, fill = cond_p)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"),
-                    values = c("#DD7E8B", "#459682")) +
+  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#DD7E8B", "#459682")) +
   scale_y_continuous(limits = c(0, 100)) +
   labs(x = "", y = "% of species") +
   theme_classic() +
   theme(legend.position = "none",
         axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.line.y = element_blank()) +
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank()) +
   coord_flip()
 #ggsave("plot_md_SGBs_phylum_p.pdf", plot_depth_sgbs_p, height = 7, width = 5)
 
@@ -253,10 +263,10 @@ ggsave("plot_md_SGBs_phylum.pdf", plot_depth_sgbs_both, height = 7, width = 7)
 # And unknown/known SGBs for biomining?
 mags_depth_sgbs_biom <- mags_metadata_bac %>%
   dplyr::filter(ecosystem == "Biomining") %>%
-  group_by(phylum, species) %>%
+  dplyr::group_by(phylum, species) %>%
   dplyr::summarise(n_spe = n()) %>%
   ungroup() %>%
-  group_by(phylum) %>%
+  dplyr::group_by(phylum) %>%
   dplyr::mutate(t_phy = sum(n_spe)) %>%
   dplyr::filter(species == "") %>%
   dplyr::mutate(diff_k = t_phy - n_spe) %>%
@@ -267,8 +277,7 @@ mags_depth_sgbs_biom <- mags_metadata_bac %>%
 plot_depth_sgbs_biom <- ggplot(mags_depth_sgbs_biom,
                                aes(x = reorder(phylum, tot), y = tot, fill = cond)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"),
-                    values = c("#DD7E8B", "#459682")) +
+  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#DD7E8B", "#459682")) +
   scale_y_continuous(limits = c(0, 25)) +
   labs(x = "Phylum", y = "Biomining species") +
   theme_classic() +
@@ -279,22 +288,23 @@ ggsave("plot_md_SGBs_phylum_biom.pdf", plot_depth_sgbs_biom, height = 5, width =
 # What is the distribution of uSGBs by ecosystem?
 mags_depth_usgbs_eco <- mags_metadata_bac %>%
   dplyr::filter(species == "") %>%
-  group_by(phylum, ecosystem) %>%
+  dplyr::group_by(phylum, ecosystem) %>%
   dplyr::summarise(num = table(ecosystem)) %>%
-  dplyr::mutate(phylum = replace(phylum, num < 5, "Other")) #group lows as "other"
+  dplyr::mutate(phylum = replace(phylum, num < 5, "Other")) #group lows as "other" -> summarise?
 
 plot_depth_usgbs <- ggplot(mags_depth_usgbs_eco,
-                           aes(x = reorder(phylum, num), y = num, fill = ecosystem)) +
+                           aes(x = num, y = reorder(phylum, num), fill = ecosystem)) +
   geom_col() +
-  labs(x = "Phylum", y = "Number of uSGBs") +
-  scale_y_continuous(n.breaks = 3) +
+  #geom_text(aes(label = num), vjust = 0.5, hjust = -0.5, size = 2.5) +
+  labs(x = "Number of uSGBs", y = "Phylum") +
+  scale_x_continuous(n.breaks = 3) +
   scale_fill_manual(values = mags_colors_eco) +
   theme_classic() +
   theme(legend.position = "none",
         strip.placement = "outside",
+        strip.background = element_blank(),
         panel.border = element_blank()) +
-  facet_grid(.~ecosystem, scales = "free") +
-  coord_flip()
+  facet_grid(.~ecosystem, scales = "free")
 ggsave("plot_md_uSGBs_eco.pdf", plot_depth_usgbs, height = 8, width = 12)
 
 # What about the annotated bins at genus level (kGGBs) from biomining?
@@ -306,13 +316,13 @@ mags_depth_kggbs_biom <- mags_metadata_bac %>%
 mags_depth_kggbs_biom <- mags_metadata_bac[mags_metadata_bac$genus %in%
                                            mags_depth_kggbs_biom$genus, ] %>%
   dplyr::select(mag_name, mag_id, phylum, family, genus, ecosystem) %>%
-  group_by(genus) %>%
+  dplyr::group_by(genus) %>%
   dplyr::mutate(tot_gen = n()) %>%
   dplyr::arrange(desc(tot_gen)) #nrow=535
 
 #scale to 0-100%
 mags_depth_kggbs_biom <- mags_depth_kggbs_biom %>%
-  group_by(genus, ecosystem) %>%
+  dplyr::group_by(genus, ecosystem) %>%
   dplyr::mutate(sum = n()) %>% #sum genus per ecosystem
   dplyr::mutate(norm = sum / tot_gen * 100) %>%
   distinct(genus, ecosystem, .keep_all = TRUE) #reduce to uniques (plot scale!)
@@ -320,44 +330,40 @@ mags_depth_kggbs_biom <- mags_depth_kggbs_biom %>%
 plot_depth_kggbs_biom <- ggplot(mags_depth_kggbs_biom,
                                 aes(y = reorder(genus, norm), x = norm, fill = ecosystem)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_x_continuous(limits = c(0, 100), n.breaks = 5) +
+  scale_x_continuous(limits = c(0, 101), n.breaks = 5) + #check!
   scale_fill_manual(values = mags_colors_eco) +
   labs(x = "% kGGBs", y = "Known genus from biomining") +
   theme_classic() +
   theme(legend.title = element_blank())
 ggsave("plot_md_kGGBs_biom.pdf", plot_depth_kggbs_biom, height = 7, width = 6)
 
-### --OTHER/PENDING TAXA-- ###
-# Inspect unannotated family-level bins (uFGBs)? #1166
-#mags_depth_ufgbs
-
-# What about novel bacteria at genus level?
+### --EXPLORE OTHER TAXA-- ###
+#inspect unannotated family-level bins (uFGBs)? #1166
+#what about novel bacteria at genus level?
 mags_depth_novel_gen <- mags_metadata_bac %>%
   dplyr::filter(genus == "") %>%
-  group_by(phylum, genus, ecosystem) %>%
+  dplyr::group_by(phylum, genus, ecosystem) %>%
   dplyr::summarise(gen_unk = n()) %>%
-  #arrange(desc(gen)) %>%
+  #dplyr::arrange(desc(gen)) %>%
   ungroup() %>%
-  group_by(genus) %>%
+  dplyr::group_by(genus) %>%
   dplyr::mutate(tot_gen = sum(gen_unk)) %>%
   dplyr::mutate(perc = gen_unk * 100 / tot_gen)
 
-# Get unique classes of unknown genus by ecosystem
-#Leptospirillia
-#Sulfobacillia
+#get unique classes of unknown genus by ecosystem
+#Leptospirillia, Sulfobacillia
 mags_md_unk_gen2 <- mags_metadata_bac %>%
   dplyr::filter(genus == "") %>%
-  group_by(class, ecosystem) %>%
+  dplyr::group_by(class, ecosystem) %>%
   tally() %>%
   #slice(n()) %>%
   ungroup()
 unique(mags_md_unk_gen2[mags_md_unk_gen2[, "ecosystem"] == "Biomining", "class"])
 
-# Unique genus from biomining: Acidithrix, Ferrithrix, SCQM01
+#unique genus from biomining: Acidithrix, Ferrithrix, SCQM01
 unique(mag_samples[mag_samples[, "family"] != "", "genus"])
 mags_metadata_bac %>% filter(grepl("Acidithrix", genus, ignore.case = TRUE) == TRUE)
 
-##plot
 plot_md_unk_cla <- ggplot(mags_md_unk_gen2[mags_md_unk_gen2$n > 10, ],
                           aes(x = reorder(class, n), y = n, fill = ecosystem)) +
   geom_bar(stat = "identity") +
@@ -366,26 +372,25 @@ plot_md_unk_cla <- ggplot(mags_md_unk_gen2[mags_md_unk_gen2$n > 10, ],
   theme_minimal() +
   coord_flip() +
   facet_wrap(~ecosystem)
-##
 ggsave("plot_md_unk_class_eco.pdf", plot_md_unk_cla, height = 7, width = 10)
 
-## Class of interest of acidic soils:
-# Alphaproteobacteria, Gammaproteobacteria
-# Acidobacteriae, Thermoleophilia, Sulfobacillia, Acidimicrobiia
+#class of interest for acidic soils:
+#Alphaproteobacteria, Gammaproteobacteria
+#Acidobacteriae, Thermoleophilia, Sulfobacillia, Acidimicrobiia
 table(mags_metadata_bac[mags_metadata_bac[, "phylum"] == "Proteobacteria", "class"])
 table(mags_metadata_bac[mags_metadata_bac[, "class"] == "Acidimicrobiia", "order"])
 
-## Family of interest reported for Systemix [ref 2022]:
-# Pseudomonadaceae (mayor), Flavobacteriaceae, Erwiniaceae
+#family of interest reported for Systemix [ref 2022]:
+#Pseudomonadaceae (mayor), Flavobacteriaceae, Erwiniaceae
 mags_md_fams_acid <- mags_metadata_bac %>%
-  filter(family == "Pseudomonadaceae") %>%
-  group_by(ecosystem) %>%
+  dplyr::filter(family == "Pseudomonadaceae") %>%
+  dplyr::group_by(ecosystem) %>%
   dplyr::summarise(count = n())
 ```
 
-### QC (biomining)
+### QC
 
-```{r magsqc}
+```{r magbiomqc}
 # Read QC file from CheckM
 mags_qc <- read.csv("2-statistics/checkm_parsed_bins.tsv", sep = "\t")
 
@@ -412,8 +417,7 @@ mags_qcs <- rbind(mags_qc_hq, mags_qc_mq, mags_qc_lq)
 rm(mags_qc_hq, mags_qc_mq, mags_qc_lq)
 
 # Plot
-plot_mags_qc <- ggplot(mags_qcs,
-                       aes(x = mags, y = fct_reorder(label, mags), fill = label)) +
+plot_mags_qc <- ggplot(mags_qcs, aes(x = mags, y = fct_reorder(label, mags), fill = label)) +
   geom_col(position = "dodge2") +
   scale_fill_manual(values = c("#DB7971", "#5CA650", "#859AC7")) +
   labs(x = "Number of MAGs", y = "") +
@@ -422,9 +426,9 @@ plot_mags_qc <- ggplot(mags_qcs,
 ggsave("plot_biom_MAGs_QC.pdf", plot_mags_qc, height = 3, width = 5)
 ```
 
-### Phylogenetic tree (biomining)
+### Phylogenetic tree
 
-```{r magstree}
+```{r magbiomtree}
 # Load GTDB taxonomy
 gtdb_taxonomy <- read.csv("1-taxonomy/gtdbtk_classification.tsv", sep = "\t", stringsAsFactors = FALSE)
 
@@ -575,30 +579,25 @@ fig_1 <- (fig_1a / fig_1b) +
   theme(plot.tag =  element_text(face = "bold"))
 ggsave("fig_1.pdf", fig_1, height = 14, width = 14)
 rm(fig_1a, fig_1b)
-#ggsave("fig_1.png", fig_1, dpi = 300, dev = "png", height = 14, width = 14, units = "cm")
 
-##fig sup 1
-fig_s1 <- { plot_depth_top_phyla | plot_depth_spec } +
-  plot_layout(ncol = 2, widths = c(0.5, 1)) &
-  theme(axis.title.x = element_text(margin = margin(t = -75, unit = "pt")))
-fig_s1 <- { fig_s1 /
-    { (plot_spacer() + plot_depth_usgbs + plot_spacer()) +
-        plot_layout(ncol = 3, widths = c(0.5, 12, 2)) } #centered
-  } + plot_annotation(tag_levels = list(c("a", "b", "c"))) &
+#fig sup 1
+fig_s1 <- { plot_depth_top_phyla |
+    (plot_depth_usgbs / plot_depth_spec + plot_layout(heights = c(0.85, 0.15))) } +
+  plot_layout(ncol = 2, widths = c(0.25, 1)) +
+  plot_annotation(tag_levels = list(c("a", "b", "c"))) &
   theme(plot.tag =  element_text(face = "bold"))
-ggsave("fig_s1.pdf", fig_s1, height = 14, width = 14)
-#ggsave("fig_s1.png", fig_s1, dpi = 300, dev = "png", height = 14, width = 14, units = "cm")
+ggsave("fig_s1.pdf", fig_s1, height = 8, width = 16)
+#ggsave("fig_s1.png", fig_s1, height = 8, width = 16)
 ```
 
-## Functional Annotation: KEGG KOs from KOfamScan
+## Section 2: Functional Annotation
 
-### Heatmap
+### Pre-process matrix of KEGG KOs from KOfamScan
 
-```{r annothmap}
-library(ComplexHeatmap)
-
-# Read output file from KOfamScan
-kegg_annot <- read.csv("/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/analysis/kegg/merge_hits/kofamscan_hits.tsv", sep = "\t")
+```{r processkos}
+# Read output matrix from KOfamScan
+kegg_annot <- read.csv("/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/analysis/kegg/merge_hits/kofamscan_hits.tsv", sep = "\t", check.names = FALSE)
+colnames(kegg_annot)[2] <- "KO.definition"
 
 # Remove uncharacterized and duplicated proteins
 kegg_annot <- kegg_annot %>%
@@ -609,13 +608,15 @@ kegg_annot <- kegg_annot %>%
 kegg_kos <- data.frame(KO = kegg_annot$KO, Definition = kegg_annot$KO.definition)
 kegg_annot <- kegg_annot %>%
   dplyr::select(-c("KO.definition")) %>%
-  data.frame(row.names = 1)
+  data.frame(row.names = 1, check.names = FALSE)
 
 # Set definitions for pathways of interest
 kegg_paths <- kegg_kos %>%
-  #"sulf": to group sulfur, sulfate, sulfane, sulfide, sulfo_
-  #"soxr": SoxR 2Fe-2S cluster
-  dplyr::filter(grepl("iron|sulf|soxr|copper", Definition, ignore.case = TRUE) == TRUE) %>%
+  #sulf: to keep sulfur, sulfate, sulfane, sulfide, sulfo_
+  #soxr: SoxR 2Fe-2S cluster
+  #nitrogen: a negative marker (ubiquous; ex: MerR family)
+  dplyr::filter(grepl("iron|sulf|soxr|copper|nitrogen",
+                      Definition, ignore.case = TRUE) == TRUE) %>%
   dplyr::select(KO, Definition)
 
 ## FUNCTIONS ##
@@ -623,18 +624,20 @@ kegg_paths <- kegg_kos %>%
 fx_setKOpathways <- function(def) {
   if (grepl("copper", def, ignore.case = TRUE) == TRUE)
     return("Copper")
-  if (grepl("sulf|sox", def, ignore.case = TRUE) == TRUE)
-    return("Sulfur")
   if (grepl("iron", def, ignore.case = TRUE) == TRUE)
     return("Iron")
+  if (grepl("sulf|sox", def, ignore.case = TRUE) == TRUE)
+    return("Sulfur")
+  if (grepl("nitrogen", def, ignore.case = TRUE) == TRUE)
+      return("Nitrogen")
   else
     return("Other")
 }
 # Function to define types of metabolism
-fx_setKOmetabolism <- function(def) {
+fx_setKOmetabtypes <- function(def) {
   #oxidation, reduction
   #fixation, hydrolysis, production, utilization, transport
-  #sulfane is an oxidative process, as well as dehydrogenases
+  #sulfane involved in oxidative processes, as well as dehydrogenases
   if (grepl("oxida|oxidi|hydrog|hydrox|sulfane", def, ignore.case = TRUE) == TRUE)
     return("Oxidation")
   if (grepl("reduc", def, ignore.case = TRUE) == TRUE)
@@ -651,7 +654,7 @@ fx_setKOmetabolism <- function(def) {
     return("Resistance")
   if (grepl("carrier|chaperone", def, ignore.case = TRUE) == TRUE)
     return("Carrier")
-  if (grepl("transcriptional|regulator", def, ignore.case = TRUE) == TRUE)
+  if (grepl("regulat", def, ignore.case = TRUE) == TRUE)
     return("Regulator")
   if (grepl("lyase", def, ignore.case = TRUE) == TRUE)
     return("Lyase")
@@ -672,6 +675,15 @@ fx_getMAGecosystem <- function(mag) {
     return(mag_eco)
   }
 }
+# Function that returns the genome size given a MAG
+fx_getMAGlength <- function(mag) {
+  mag_size <- mags_metadata_bac %>%
+    dplyr::mutate(bin = paste0(mag_name, ".", mag_id)) %>%
+    dplyr::filter(bin == mag) %>%
+    dplyr::select(genome_size) %>%
+    as.numeric()
+  return(mag_size)
+}
 ## END FUNCTIONS ##
 
 # Populate both pathways and metabolism
@@ -679,75 +691,81 @@ kegg_ko_paths <- vector()
 kegg_ko_metab <- vector()
 for (i in 1:nrow(kegg_paths)) {
 	kegg_ko_paths <- append(kegg_ko_paths, fx_setKOpathways(kegg_paths$Definition[i]))
-	kegg_ko_metab <- append(kegg_ko_metab, fx_setKOmetabolism(kegg_paths$Definition[i]))
+	kegg_ko_metab <- append(kegg_ko_metab, fx_setKOmetabtypes(kegg_paths$Definition[i]))
 }
 kegg_paths['Pathway'] <- kegg_ko_paths
 kegg_paths['Metabolism'] <- kegg_ko_metab
+rm(kegg_ko_paths, kegg_ko_metab) #clean memory
 
 # Keep only selected pathways from the annotation matrix
-# (this matrix will be used later for bubble plots)
+# (NOTE: this matrix will be used later for bubble plots)
 kegg_filt <- kegg_annot[row.names(kegg_annot) %in% kegg_paths$KO, ]
 
+# Annotate ecosystem and genome size for MAGs
+kegg_mags <- colnames(kegg_filt) %>% as.data.frame()
+colnames(kegg_mags) <- c("mag")
+
+kegg_mags_eco <- vector()
+kegg_mags_length <- vector()
+for (i in 1:nrow(kegg_mags)) { #this loop takes a few secs to run!
+	kegg_mags_eco <- append(kegg_mags_eco, fx_getMAGecosystem(kegg_mags$mag[i]))
+	kegg_mags_length <- append(kegg_mags_length, fx_getMAGlength(kegg_mags$mag[i]))
+}
+kegg_mags['ecosystem'] <- kegg_mags_eco
+kegg_mags['length'] <- kegg_mags_length
+rm(kegg_mags_eco, kegg_mags_length) #clean memory
+
+# Explore ecosystems..
+table(kegg_mags$ecosystem)
+kegg_mags %>% dplyr::filter(ecosystem == "Biomining") %>% dplyr::summarise(total = sum(length))
+kegg_mags %>% dplyr::group_by(ecosystem) %>% dplyr::summarise(total = sum(length))
+```
+
+### Heatmap
+
+```{r heatmap}
 # Row-wise variance, then filter both matrix and pathways
-kegg_filt_row_var <- apply(kegg_filt, 1, var)
-#save in another variable!**
-kegg_filt <- kegg_filt[kegg_filt_row_var >= summary(kegg_filt_row_var)[3], ] #median
-kegg_paths_sub <- kegg_paths[kegg_paths$KO %in% row.names(kegg_filt), ]
+kegg_hm_filt_var <- apply(kegg_filt, 1, var)
+kegg_hm_data <- kegg_filt[kegg_hm_filt_var >= summary(kegg_hm_filt_var)[3], ] #median
+kegg_hm_paths <- kegg_paths[kegg_paths$KO %in% row.names(kegg_hm_data), ]
 
 # Normalize rows by z-score
-kegg_filt_norm <- apply(kegg_filt, 1, norm <- function(x){return (x - mean(x)) / sd(x)}) %>% t()
-
-#plot test
-#heatmap(as.matrix(kegg_filt))
-#heatmap(kegg_filt_norm)
+kegg_hm_data <- apply(kegg_hm_data, 1, norm <- function(x){return (x - mean(x)) / sd(x)}) %>% t()
 
 # Plot using ComplexHeatmap
 kegg_hm_colors <- colorRamp2(c(-2, 0, 2), c("#5073AD", "white", "#D33D35"))
 
 # Annotate rows: KO labels
-#with high number of hits: row.names(kegg_filt[rowSums(kegg_filt) > 100, ])
+#with high number of hits: row.names(kegg_hm_data[rowSums(kegg_hm_data) > 100, ])
 # KOs with low variance (1/2 data %>% sort())
-#kegg_hm_rows_lab <- row.names(kegg_filt[apply(kegg_filt_norm, 1, var) < 0.00015, ])
-#kegg_hm_rows_at <- which(row.names(kegg_filt) %in% kegg_hm_rows_lab)
+#kegg_hm_rows_lab <- row.names(kegg_hm_data[apply(kegg_filt_norm, 1, var) < 0.00015, ])
+#kegg_hm_rows_at <- which(row.names(kegg_hm_data) %in% kegg_hm_rows_lab)
 #kegg_hm_rows_kos <- HeatmapAnnotation(KOs = anno_mark(at = kegg_hm_rows_at,
 #                                                      labels = kegg_hm_rows_lab,
 #                                                      labels_gp = gpar(fontsize = 6)),
 #                                      which = "row")
-# Row names in the heatmap are not sorted!
-#row.names(kegg_filt)[row_order(kegg_heatmap)]
 
 # Annotate rows: KO pathways
 kegg_hm_rows_path <- c("Iron" = "#666666", "Sulfur" = "#DDAD3B", "Copper" = "#CA6627")
-kegg_hm_rows_path <- list(Def = kegg_paths_sub$Pathway, Pathways = kegg_hm_rows_path)
+kegg_hm_rows_path <- list(Def = kegg_hm_paths$Pathway, Pathways = kegg_hm_rows_path)
 
-kegg_hm_rows_ann_path <- HeatmapAnnotation(Pathways = kegg_paths_sub$Pathway,
+kegg_hm_rows_ann_path <- HeatmapAnnotation(Pathways = kegg_hm_paths$Pathway,
                                            col = kegg_hm_rows_path, border = FALSE,
                                            show_annotation_name = FALSE,
                                            show_legend = TRUE, which = "row")
 
 # Annotate rows: KO metabolism
-kegg_hm_rows_metab <- setNames(brewer.pal(length(unique(kegg_paths_sub$Metabolism)), "Paired"), unique(kegg_paths_sub$Metabolism)) #Set3
+kegg_hm_rows_metab <- setNames(brewer.pal(length(unique(kegg_hm_paths$Metabolism)), "Paired"), unique(kegg_hm_paths$Metabolism)) #Set3
 kegg_hm_rows_metab <- sample(kegg_hm_rows_metab)
-kegg_hm_rows_metab <- list(Met = kegg_paths_sub$Metabolism, Metabolism = kegg_hm_rows_metab)
+kegg_hm_rows_metab <- list(Met = kegg_hm_paths$Metabolism, Metabolism = kegg_hm_rows_metab)
 
-kegg_hm_rows_ann_metab <- HeatmapAnnotation(Metabolism = kegg_paths_sub$Metabolism,
+kegg_hm_rows_ann_metab <- HeatmapAnnotation(Metabolism = kegg_hm_paths$Metabolism,
                                             col = kegg_hm_rows_metab, border = FALSE,
                                             show_annotation_name = FALSE,
                                             show_legend = TRUE, which = "row")
 
 # Annotate cols: ecosystems
-kegg_mags <- colnames(kegg_filt) %>% as.data.frame()
-colnames(kegg_mags) <- c("mag")
-
-kegg_mags_eco <- vector()
-for (i in 1:nrow(kegg_mags)) {
-	kegg_mags_eco <- append(kegg_mags_eco, fx_getMAGecosystem(kegg_mags$mag[i]))
-}
-kegg_mags['ecosystem'] <- kegg_mags_eco
-rm(kegg_mags_eco)
-#table(kegg_mags$ecosystem)
-
-#match with mags_colors_eco**
+#match colors with mags_colors_eco*
 kegg_hm_cols_mags <- setNames(brewer.pal(length(unique(kegg_mags$ecosystem)), "Paired"), unique(kegg_mags$ecosystem))
 kegg_hm_cols_mags <- sample(kegg_hm_cols_mags)
 kegg_hm_cols_mags <- list(Eco = kegg_mags$ecosystem, Ecosystem = kegg_hm_cols_mags)
@@ -757,33 +775,32 @@ kegg_hm_cols_ann_mags <- HeatmapAnnotation(Ecosystem = kegg_mags$ecosystem,
                                            show_annotation_name = FALSE,
                                            show_legend = TRUE, which = "column")
 
-# Heatmap with annotations
-pdf("plot_annot_heatmap_kofam.pdf", height = 9, width = 9)
-kegg_heatmap <- Heatmap(kegg_filt_norm, name = "Abundance",
+# Plot heatmap with annotations
+pdf("plot_annot_heatmap.pdf", height = 9, width = 9)
+kegg_hm_plot <- Heatmap(kegg_filt_norm, name = "Abundance",
                         row_title = "KEGG KOs", column_title = "Ecosystem MAGs",
                         show_row_names = FALSE, show_column_names = FALSE,
                         col = kegg_hm_colors, border = FALSE,
-                        row_split = kegg_paths_sub$Pathway,
+                        row_split = kegg_hm_paths$Pathway,
                         column_split = kegg_mags$ecosystem,
                         right_annotation = kegg_hm_rows_ann_metab,
                         left_annotation = kegg_hm_rows_ann_path,
                         top_annotation = kegg_hm_cols_ann_mags)
-draw(kegg_heatmap, merge_legend = TRUE)
+draw(kegg_hm_plot, merge_legend = TRUE)
 while (!is.null(dev.list())) dev.off()
+# Row names in the heatmap are not sorted!
+#row.names(kegg_hm_data)[row_order(kegg_hm_plot)]
 ```
 
 ### PCA
 
-```{r annotpca}
-library(ggbiplot)
-library(PCAtools)
-
+```{r pca}
 # NOTE: selected cycles (Fe, Cu, S) have low representation in row sums,
 # so during filtration we need to consider them within the range of values.
 # E.g., rows with low variances could be kept but they are also too many.
 #kegg_pca_annot_row_var <- apply(kegg_annot, 1, var)
 #kegg_pca_dat <- kegg_annot[kegg_pca_annot_row_var > summary(kegg_pca_annot_row_var)[3], ]
-kegg_pca_dat <- kegg_filt
+kegg_pca_dat <- kegg_hm_data
 
 # Merge KO definitions
 kegg_pca_kos <- data.frame(KO = row.names(kegg_pca_dat))
@@ -823,7 +840,7 @@ kegg_pca_screeplot <- ggplot(kegg_pca_scree_df, aes(x = PC, y = Var)) +
   labs(x = "PC", y = "Variance Explained") +
   xlim(0, 50) + ylim(0, 0.06) +
   theme_minimal()
-ggsave("plot_annot_pca_kofam_screeplot.pdf", kegg_pca_screeplot, height = 4, width = 5)
+ggsave("plot_annot_pca_screeplot.pdf", kegg_pca_screeplot, height = 4, width = 5)
 
 # Biplot
 #kegg_pca_colors <- c("Copper" = "#CA6627", "Iron" = "#666666",
@@ -841,7 +858,7 @@ kegg_pca_biplot <- ggbiplot(kegg_pca, choices = c(1, 2), groups = kegg_pca_kos$P
   #geom_point(aes(colour = kegg_pca_kos$Pathway), size = 1.5) +
   theme(legend.direction = "horizontal", legend.position = "right") +
   theme_bw()
-ggsave("plot_annot_pca_kofam_biplot.pdf", kegg_pca_biplot, height = 9, width = 9)
+ggsave("plot_annot_pca_biplot.pdf", kegg_pca_biplot, height = 9, width = 9)
 
 
 ## PCAtools
@@ -877,369 +894,670 @@ kegg_pca_obj_biplot <- biplot(kegg_pca_obj, showLoadings = FALSE, sizeLoadingsNa
                               colLegendTitle = "Ecosystem", colby = "ecosystem", 
                               colkey = mags_colors_eco, ellipse = TRUE,
                               xlim = c(-100, 70), ylim = c(-20, 10))
-ggsave("plot_annot_pcatools_kofam_biplot.pdf", kegg_pca_obj_biplot, height = 9, width = 10)
+ggsave("plot_annot_pcatools_biplot.pdf", kegg_pca_obj_biplot, height = 9, width = 10)
 
 # Pairsplot
 kegg_pca_obj_pairs <- pairsplot(kegg_pca_obj, colby = "ecosystem",
                                 colkey = mags_colors_eco, pointSize = 1,
                                 components = getComponents(kegg_pca_obj, c(1:4)))
-ggsave("plot_annot_pcatools_kofam_pairsplot.pdf", kegg_pca_obj_pairs, height = 7, width = 10)
+ggsave("plot_annot_pcatools_pairsplot.pdf", kegg_pca_obj_pairs, height = 7, width = 10)
 ```
 
-### Bubble plot
+### Bubble and box plots
 
-```{r annotbub}
-library(agricolae)
-#library(ggpubr)
-
-# Plot design:
-# -split KOs per copper, iron and sulfur;
-# -for each KO, set all ecosystems to definition;
-# -split columns per mag ecosystems;
-# -print in row labels KO name + definition.
-
+```{r bubble}
 # Get unique ecosystems
 kegg_bubble_eco <- unique(kegg_mags$ecosystem) %>% as.character()
 
-# Prepare dataframe
+# Take selected KOs and prepare dataset
 kegg_bubble <- row.names(kegg_filt) %>%
   as.data.frame() %>%
-  dplyr::slice(rep(1:n(), each = length(kegg_bubble_eco)))
+  slice(rep(1:n(), each = length(kegg_bubble_eco)))
 colnames(kegg_bubble) <- c("KO")
 kegg_bubble['ecosystem'] <- c("")
 kegg_bubble$ecosystem <- rep(kegg_bubble_eco, nrow(kegg_filt))
-#optimize with pivot_longer()?
-#kegg_bubble['count'] <- sample(100, size = nrow(kegg_bubble), replace = TRUE) #plot test
 
-# Function to count matching KOs in all bins for each ecosystem
-fx_countKOsbyeco <- function(ko) {
-  #given a KO, retrieve all bins in the filtered matrix
+# Plot design/overview:
+# -split KOs per Cu, Fe and S (N is control)
+# -split x-axis per ecosystems, KO definitions in y-axis
+# -sum KO counts across ecosystems
+# -normalize them taking the genome size
+# -use statistical analysis (anova, groups)
+
+# Function that counts the matching KOs in each ecosystem
+# Also, retrieves the bins size in order to normalize counts later
+fx_countKOsByEco <- function(ko) {
+  #retrieve all bins in the filtered matrix for the given KO
+  #this row contains the counts across all ecosystems
   row <- kegg_filt[row.names(kegg_filt) == ko, ]
   #vectors to populate
   eco <- vector()
-  sum <- vector()
+  len <- vector()
+  cou <- vector()
+  #get the ecosystem, length and counts for each bin
   for (j in 1:ncol(row)) {
-    #get the ecosystem for each bin (column) and sum uniques
     e <- kegg_mags[kegg_mags$mag == colnames(kegg_filt)[j], ] %>%
-      dplyr::select(ecosystem) %>%
-      as.character()
+      dplyr::select(ecosystem) %>% as.character()
     eco <- append(eco, e)
-    sum <- append(sum, row[1, j])
+    l <- kegg_mags[kegg_mags$mag == colnames(kegg_filt)[j], ] %>%
+      dplyr::select(length) %>% as.numeric()
+    len <- append(len, l) #length
+    cou <- append(cou, row[1, j]) #counts
   }
   #vectors to dataframe
-  df <- data.frame(Ecosystem = eco, Counts = sum)
-  #merge ecosystems for counting and return
-  df <- aggregate(df$Counts, list(df$Ecosystem), FUN = sum)
-  colnames(df)[1] <- "ecosystem"
-  colnames(df)[2] <- "count"
+  df <- data.frame(ecosystem = eco, count = cou, length = len)
+  #sum counts and length by ecosystem
+  df <- df %>% dplyr::group_by(ecosystem) %>%
+    dplyr::summarise(across(everything(), sum))
   return(df)
 }
 
-# Count KOs for selected pathways
-# (time-consuming loop: runtime ~5-6 min for 247*10 rows!)
-kegg_bubble_counts <- tibble(ecosystem = character(), count = numeric())
+# Count total KOs and length in all across ecosystems for selected pathways
+# (time-consuming loop: runtime ~12 mins for rows in kegg_paths*)
+kegg_bubble_counts <- tibble(ecosystem = character(), count = numeric(), length = numeric())
+kos_df <- vector()
+eco_df <- vector()
+cou_df <- vector()
 for (i in seq(1, nrow(kegg_bubble), length(kegg_bubble_eco))) {
-  #loop step of 10 KOs
+  #current KO -> loop step of 10 KOs
   #print(sprintf("%i -> KO: %s", i, kegg_bubble[i, 1]))
-  #current KO
-  kos_df <- fx_countKOsbyeco(kegg_bubble[i, 1])
-  #merge ecosystem counts sorted from our stored list
+  kos_df <- fx_countKOsByEco(kegg_bubble[i, 1])
+  #merge ecosystem counts sorted from our list
   eco_df <- kegg_bubble_eco %>% as.data.frame()
   colnames(eco_df) <- c("ecosystem")
-  counts_df <- left_join(eco_df, kos_df, by = c("ecosystem"))
-  kegg_bubble_counts <- rbind(kegg_bubble_counts, counts_df)
+  #save counts
+  cou_df <- left_join(eco_df, kos_df, by = c("ecosystem"))
+  kegg_bubble_counts <- rbind(kegg_bubble_counts, cou_df)
 }
-# Clean memory and add column of counts
-rm(kos_df, eco_df, counts_df)
+# Add column for counts
 kegg_bubble <- cbind(kegg_bubble, counts = kegg_bubble_counts[, 2])
+kegg_bubble <- cbind(kegg_bubble, length = kegg_bubble_counts[, 3])
+rm(kos_df, eco_df, cou_df) #clean memory
+
+# Normalize counts: length to mb and get counts per mb
+kegg_bubble <- kegg_bubble %>%
+  dplyr::mutate(length_mb = round(length / 1000000, 3)) %>%
+  dplyr::mutate(count_norm = round(counts / length_mb, 3))
+#explore
+kegg_bubble %>% dplyr::group_by(ecosystem) %>% dplyr::summarise(n = sum(count_norm))
 
 # Combine counts and pathways datasets:
 # -get definitions and metabolism from kegg_paths
 # -merge df with counts per ecosystem
-# -remove biomining KOs with low counts (ie. sulfur: <= 5)
-# -subset df with kept KOs
-# *todo: split definition in two columns by " [EC:"
-#copper
-kegg_bubble_copper <- kegg_paths %>% #kegg_paths_sub
+# -remove KOs from biomining with low counts
+
+# Copper pathway
+kegg_bubble_cu <- kegg_paths %>%
   dplyr::filter(Pathway == "Copper") %>%
   dplyr::select(KO, Definition, Metabolism)
-kegg_bubble_copper <- left_join(kegg_bubble_copper, kegg_bubble, by = c("KO"))
-kegg_bubble_keep <- kegg_bubble_copper %>%
-  dplyr::filter(ecosystem == "Biomining" & counts > 1) %>%
+kegg_bubble_cu <- left_join(kegg_bubble_cu, kegg_bubble, by = c("KO"))
+#filter
+kegg_bubble_keep <- kegg_bubble_cu %>%
+  dplyr::filter(ecosystem == "Biomining" & count_norm > 0) %>%
   dplyr::select(KO)
-kegg_bubble_copper <- kegg_bubble_copper[kegg_bubble_copper$KO %in% kegg_bubble_keep$KO, ]
+kegg_bubble_cu <- kegg_bubble_cu[kegg_bubble_cu$KO %in% kegg_bubble_keep$KO, ]
 
-#iron
-kegg_bubble_iron <- kegg_paths %>%
+# Iron pathway
+kegg_bubble_fe <- kegg_paths %>%
   dplyr::filter(Pathway == "Iron") %>%
   dplyr::select(KO, Definition, Metabolism)
-kegg_bubble_iron <- left_join(kegg_bubble_iron, kegg_bubble, by = c("KO"))
-kegg_bubble_keep <- kegg_bubble_iron %>%
-  dplyr::filter(ecosystem == "Biomining" & counts > 1) %>%
+kegg_bubble_fe <- left_join(kegg_bubble_fe, kegg_bubble, by = c("KO"))
+#filter
+kegg_bubble_keep <- kegg_bubble_fe %>%
+  dplyr::filter(ecosystem == "Biomining" & count_norm > 0.01) %>%
   dplyr::select(KO)
-kegg_bubble_iron <- kegg_bubble_iron[kegg_bubble_iron$KO %in% kegg_bubble_keep$KO, ] %>%
-  dplyr::filter(!KO == "K02014") #remove outlier with counts > 500!
+kegg_bubble_fe <- kegg_bubble_fe[kegg_bubble_fe$KO %in% kegg_bubble_keep$KO, ] %>%
+  dplyr::filter(!KO == "K02013" & !KO == "K02014") #outliers
 
-#sulfur
-kegg_bubble_sulfur <- kegg_paths %>%
+# Sulfur pathway
+kegg_bubble_s <- kegg_paths %>%
   dplyr::filter(Pathway == "Sulfur") %>%
   dplyr::select(KO, Definition, Metabolism)
-kegg_bubble_sulfur <- left_join(kegg_bubble_sulfur, kegg_bubble, by = c("KO"))
-kegg_bubble_keep <- kegg_bubble_sulfur %>%
-  dplyr::filter(ecosystem == "Biomining" & counts >= 10) %>%
+kegg_bubble_s <- left_join(kegg_bubble_s, kegg_bubble, by = c("KO"))
+#filter
+kegg_bubble_keep <- kegg_bubble_s %>%
+  dplyr::filter(ecosystem == "Biomining" & count_norm > 0.05) %>%
   dplyr::select(KO)
-kegg_bubble_sulfur <- kegg_bubble_sulfur[kegg_bubble_sulfur$KO %in% kegg_bubble_keep$KO, ]
+kegg_bubble_s <- kegg_bubble_s[kegg_bubble_s$KO %in% kegg_bubble_keep$KO, ]
 
-# Check sorting. Conclusion: use reorder() instead fct_reorder()
-#kegg_bubble_copper %>% group_by(ecosystem) %>% dplyr::summarise(n = sum(counts))
+# Sort ecosystems (by median)
+anova_sort_cu <- kegg_bubble_cu %>%
+  dplyr::group_by(ecosystem) %>%
+  dplyr::summarise(n = median(count_norm)) %>%
+  dplyr::arrange(desc(n)) %>%
+  as.data.frame()
+anova_sort_fe <- kegg_bubble_fe %>%
+  dplyr::group_by(ecosystem) %>%
+  dplyr::summarise(n = median(count_norm)) %>%
+  dplyr::arrange(desc(n)) %>%
+  as.data.frame()
+anova_sort_s <- kegg_bubble_s %>%
+  dplyr::group_by(ecosystem) %>%
+  dplyr::summarise(n = median(count_norm)) %>%
+  dplyr::arrange(desc(n)) %>%
+  as.data.frame()
+
+# We need to re-sort the default colors..
+mags_ecosystem <- kegg_bubble_eco %>% sort()
+mags_colors <- tibble(ecosystem = mags_ecosystem, colors = mags_colors_eco)
+anova_sort_cu <- left_join(anova_sort_cu, mags_colors, by = c("ecosystem"))
+anova_sort_fe <- left_join(anova_sort_fe, mags_colors, by = c("ecosystem"))
+anova_sort_s <- left_join(anova_sort_s, mags_colors, by = c("ecosystem"))
+
+# Boxplots
+anova_boxplot_cu <- ggboxplot(kegg_bubble_cu, x = "ecosystem", y = "count_norm",
+                           color = "ecosystem", palette = anova_sort_cu$colors,
+                           order = anova_sort_cu$ecosystem, add = "jitter", legend = "none") +
+  geom_hline(yintercept = mean(kegg_bubble_cu$count_norm),
+             linetype = 2, linewidth = 0.2) +
+  labs(x = "Ecosystem", y = "KOs/Mb for copper") +
+  rotate_x_text(angle = 45) + #ylim(c(0, 0.25)) +
+  #stat_summary(fun = mean, geom = "point", shape = 18, size = 2.5, color = "#FC4E07") +
+  stat_compare_means(method = "anova", label.y = 0.25) + #add global annova p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.", hide.ns = TRUE)
+ggsave("plot_annot_boxplot_copper.pdf", anova_boxplot_cu, height = 7, width = 7)
+
+anova_boxplot_fe <- ggboxplot(kegg_bubble_fe, x = "ecosystem", y = "count_norm",
+                           color = "ecosystem", palette = anova_sort_fe$colors,
+                           order = anova_sort_fe$ecosystem, add = "jitter", legend = "none") +
+  geom_hline(yintercept = mean(kegg_bubble_fe$count_norm),
+             linetype = 2, linewidth = 0.2) +
+  labs(x = "Ecosystem", y = "KOs/Mb for iron") +
+  rotate_x_text(angle = 45) +
+  stat_compare_means(method = "anova", label.y = 0.4) + #add global annova p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.", hide.ns = TRUE, label.y = 0.35)
+ggsave("plot_annot_boxplot_iron.pdf", anova_boxplot_fe, height = 7, width = 7)
+
+anova_boxplot_s <- ggboxplot(kegg_bubble_s, x = "ecosystem", y = "count_norm",
+                             color = "ecosystem", palette = anova_sort_s$colors,
+                             order = anova_sort_s$ecosystem, add = "jitter", legend = "none") +
+  geom_hline(yintercept = mean(kegg_bubble_s$count_norm),
+             linetype = 2, linewidth = 0.2) +
+  labs(x = "Ecosystem", y = "KOs/Mb for sulfur") +
+  rotate_x_text(angle = 45) +
+  stat_compare_means(method = "anova", label.y = 0.7) + #add global annova p-value
+  stat_compare_means(label = "p.signif", method = "t.test",
+                     ref.group = ".all.", hide.ns = TRUE)
+ggsave("plot_annot_boxplot_sulfur.pdf", anova_boxplot_s, height = 7, width = 7)
+
+# Bubble plot with key KOs from biomining
+#multicopper, copper resistance (B,C,D), menaquinol
+#UDP−sulfoquinovose, high−affinity iron transporter, thiosulfate dehydrogenase
+#sulfide:quinone oxidoreductase, sulfate adenylyltransferase, mononucleotide sulfurtransferase, 
+#heterodisulfide C2, sulfolactate sulfo-lyase subunit, CysO sulfur-carrier
+kegg_biom_key <- c("K22552", "K07233", "K07156", "K07245", "K03886",
+                   "K06118", "K07243", "K19713", "K16937",
+                   "K17218", "K00958", "K06864", 
+                   "K03390", "K01023", "K16845", "K16846", "K21140", "K21148")
+
+kegg_bubbles_plot <- kegg_bubble %>%
+  filter(KO %in% kegg_biom_key) %>%
+  left_join(kegg_paths, by = c("KO")) %>% #add definitions, then plot
+  ggplot(aes(x = reorder(ecosystem, -count_norm),
+             y = Definition, size = count_norm, color = ecosystem)) +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = mags_colors_eco, guide = "none") +
+  labs(title = "", x = "Ecosystem", y = "Highlighted KO definitions") +
+  guides(size = guide_legend(title = "Norm. counts")) +
+  theme_classic() +
+  theme(legend.title = element_text(size = 9), legend.position = "right",
+        plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic"),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+ggsave("plot_annot_bubbles.pdf", kegg_bubbles_plot, height = 7, width = 8.5)
 
 # ANOVA test:
 # H0 the means are equal for ecosystems (if p < 0.05, we take Ha)
-anova_copper <- aov(counts ~ ecosystem, data = kegg_bubble_copper)
-summary(anova_copper) #p = 0.00244 ** (significance 0.01)
-anova_iron <- aov(counts ~ ecosystem, data = kegg_bubble_iron)
-summary(anova_iron) #p = 0.00912 ** (signif. 0.01)
-anova_sulfur <- aov(counts ~ ecosystem, data = kegg_bubble_sulfur)
-summary(anova_sulfur) #p = 6.3e-10 *** (signif. 0.001)
+#anova_cu <- aov(count_norm ~ ecosystem, data = kegg_bubble_cu)
+#summary(anova_cu) #p = 0.0866
+#anova_iron <- aov(counts ~ ecosystem, data = kegg_bubble_iron)
+#summary(anova_iron) #p = 0.00912 ** (signif. 0.01)
+#anova_sulfur <- aov(counts ~ ecosystem, data = kegg_bubble_sulfur)
+#summary(anova_sulfur) #p = 6.3e-10 *** (signif. 0.001)
 
-#for KO definitions (y-axis)
-anova_copper2 <- aov(counts ~ Definition, data = kegg_bubble_copper)
-summary(anova_copper2) #p = 4.26e-13 ***
-anova_iron2 <- aov(counts ~ Definition, data = kegg_bubble_iron)
-summary(anova_iron2) #p = <2e-16 ***
-anova_sulfur2 <- aov(counts ~ Definition, data = kegg_bubble_sulfur)
-summary(anova_sulfur2) #p = <2e-16 ***
+## Calculate mean and sd between ecosystems
+#anova_copper_stats <- kegg_bubble_copper %>%
+#  group_by(ecosystem) %>%
+#  dplyr::summarise(mean = mean(counts), sd = sd(counts))
+#anova_iron_stats <- kegg_bubble_iron %>%
+#  group_by(ecosystem) %>%
+#  dplyr::summarise(mean = mean(counts), sd = sd(counts))
+#anova_sulfur_stats <- kegg_bubble_sulfur %>%
+#  group_by(ecosystem) %>%
+#  dplyr::summarise(mean = mean(counts), sd = sd(counts))
+#
+## FISHER LSD test: inspect which group means are different (ie. tukey)
+## H0: ecosystems are independent
+#anova_copper_test <- LSD.test(anova_copper, "ecosystem")
+##print(anova_copper_test)
+#anova_copper_test <- anova_copper_test$groups %>%
+#  as.data.frame() %>%
+#  rownames_to_column("ecosystem")
+#anova_iron_test <- LSD.test(anova_iron, "ecosystem")
+#anova_iron_test <- anova_iron_test$groups %>%
+#  as.data.frame() %>%
+#  rownames_to_column("ecosystem")
+#anova_sulfur_test <- LSD.test(anova_sulfur, "ecosystem")
+#anova_sulfur_test <- anova_sulfur_test$groups %>%
+#  as.data.frame() %>%
+#  rownames_to_column("ecosystem")
 
-# Calculate mean and sd between ecosystems
-anova_copper_stats <- kegg_bubble_copper %>%
-  group_by(ecosystem) %>%
-  dplyr::summarise(mean = mean(counts), sd = sd(counts))
-anova_iron_stats <- kegg_bubble_iron %>%
-  group_by(ecosystem) %>%
-  dplyr::summarise(mean = mean(counts), sd = sd(counts))
-anova_sulfur_stats <- kegg_bubble_sulfur %>%
-  group_by(ecosystem) %>%
-  dplyr::summarise(mean = mean(counts), sd = sd(counts))
+# Box plots -> from checking use reorder()* instead fct_reorder()*!
+#anova_copper_plot <- ggplot(kegg_bubble_copper, aes(x = reorder(ecosystem, -counts),
+#                                                    y = counts, color = ecosystem)) +
+#  geom_boxplot() +
+#  scale_color_manual(values = mags_colors_eco, guide = "none") +
+#  geom_text(data = anova_copper_test, aes(label = groups),
+#            y = -1.5, vjust = -0.5, size = 3, color = "black") +
+#  labs(x = "Ecosystem", y = "KO counts for copper") +
+#  theme_bw() +
+#  theme(panel.grid.major = element_blank(),
+#        panel.grid.minor = element_blank(),
+#        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+#ggsave("plot_annot_bubble_anova_copper.pdf", anova_copper_plot, height = 7, width = 7)
+#
+#anova_iron_plot <- ggplot(kegg_bubble_iron, aes(x = reorder(ecosystem, -counts),
+#                                                y = counts, color = ecosystem)) +
+#  geom_boxplot() +
+#  scale_color_manual(values = mags_colors_eco, guide = "none") +
+#  geom_text(data = anova_iron_test, aes(label = groups),
+#            y = -5, vjust = -0.5, size = 3, color = "black") +
+#  labs(x = "Ecosystem", y = "KO counts for iron") +
+#  theme_bw() +
+#  theme(panel.grid.major = element_blank(),
+#        panel.grid.minor = element_blank(),
+#        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+#ggsave("plot_annot_bubble_anova_iron.pdf", anova_iron_plot, height = 7, width = 7)
+#
+#anova_sulfur_plot <- ggplot(kegg_bubble_sulfur, aes(x = reorder(ecosystem, -counts),
+#                                                    y = counts, color = ecosystem)) +
+#  geom_boxplot() +
+#  scale_color_manual(values = mags_colors_eco, guide = "none") +
+#  geom_text(data = anova_sulfur_test, aes(label = groups),
+#            y = -4, vjust = -0.5, size = 3, color = "black") +
+#  labs(x = "Ecosystem", y = "KO counts for sulfur") +
+#  theme_bw() +
+#  theme(panel.grid.major = element_blank(),
+#        panel.grid.minor = element_blank(),
+#        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+#ggsave("plot_annot_bubble_anova_sulfur.pdf", anova_sulfur_plot, height = 7, width = 7)
 
-#mean and sd between KO definitions
-anova_copper_stats2 <- kegg_bubble_copper %>%
-  group_by(Definition) %>%
-  dplyr::summarise(mean = mean(counts), sd = sd(counts))
-anova_iron_stats2 <- kegg_bubble_iron %>%
-  group_by(Definition) %>%
-  dplyr::summarise(mean = mean(counts), sd = sd(counts))
-anova_sulfur_stats2 <- kegg_bubble_sulfur %>%
-  group_by(Definition) %>%
-  dplyr::summarise(mean = mean(counts), sd = sd(counts))
-
-# FISHER LSD test: inspect which group means are different (ie. tukey)
-# H0: ecosystems are independent
-anova_copper_test <- LSD.test(anova_copper, "ecosystem")
-#print(anova_copper_test)
-anova_copper_test <- anova_copper_test$groups %>%
-  as.data.frame() %>%
-  rownames_to_column("ecosystem")
-anova_iron_test <- LSD.test(anova_iron, "ecosystem")
-anova_iron_test <- anova_iron_test$groups %>%
-  as.data.frame() %>%
-  rownames_to_column("ecosystem")
-anova_sulfur_test <- LSD.test(anova_sulfur, "ecosystem")
-anova_sulfur_test <- anova_sulfur_test$groups %>%
-  as.data.frame() %>%
-  rownames_to_column("ecosystem")
-
-#fisher for KO definitions
-anova_copper_test2 <- LSD.test(anova_copper2, "Definition")
-anova_copper_test2 <- anova_copper_test2$groups %>%
-  as.data.frame() %>%
-  rownames_to_column("Definition") #keep 5
-anova_iron_test2 <- LSD.test(anova_iron2, "Definition")
-anova_iron_test2 <- anova_iron_test2$groups %>%
-  as.data.frame() %>%
-  rownames_to_column("Definition") #keep 5
-anova_sulfur_test2 <- LSD.test(anova_sulfur2, "Definition")
-anova_sulfur_test2 <- anova_sulfur_test2$groups %>%
-  as.data.frame() %>%
-  rownames_to_column("Definition") #keep 7
-
-# Box plot: Cu, Fe, S
-anova_copper_plot <- ggplot(kegg_bubble_copper, aes(x = reorder(ecosystem, -counts),
-                                                    y = counts, color = ecosystem)) +
-  geom_boxplot() +
-  scale_color_manual(values = mags_colors_eco, guide = "none") +
-  geom_text(data = anova_copper_test, aes(label = groups),
-            y = -1.5, vjust = -0.5, size = 3, color = "black") +
-  labs(x = "Ecosystem", y = "KO counts for copper") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubble_anova_copper.pdf", anova_copper_plot, height = 7, width = 7)
-
-anova_iron_plot <- ggplot(kegg_bubble_iron, aes(x = reorder(ecosystem, -counts),
-                                                y = counts, color = ecosystem)) +
-  geom_boxplot() +
-  scale_color_manual(values = mags_colors_eco, guide = "none") +
-  geom_text(data = anova_iron_test, aes(label = groups),
-            y = -5, vjust = -0.5, size = 3, color = "black") +
-  labs(x = "Ecosystem", y = "KO counts for iron") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubble_anova_iron.pdf", anova_iron_plot, height = 7, width = 7)
-
-anova_sulfur_plot <- ggplot(kegg_bubble_sulfur, aes(x = reorder(ecosystem, -counts),
-                                                    y = counts, color = ecosystem)) +
-  geom_boxplot() +
-  scale_color_manual(values = mags_colors_eco, guide = "none") +
-  geom_text(data = anova_sulfur_test, aes(label = groups),
-            y = -4, vjust = -0.5, size = 3, color = "black") +
-  labs(x = "Ecosystem", y = "KO counts for sulfur") +
-  theme_bw() +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubble_anova_sulfur.pdf", anova_sulfur_plot, height = 7, width = 7)
-
-# Bubble plot integrating stats: Cu, Fe, S
-kegg_bubble_plot_cu <- ggplot(kegg_bubble_copper,
-                              aes(x = reorder(ecosystem, -counts),
-                                  y = Definition, size = counts, color = ecosystem)) +
+# Bubble plots for each pathway
+kegg_bubble_plot_cu <- ggplot(kegg_bubble_cu,
+                              aes(x = reorder(ecosystem, -count_norm),
+                                  y = Definition, size = count_norm, color = ecosystem)) +
   geom_point(alpha = 0.7) +
   scale_color_manual(values = mags_colors_eco, guide = "none") +
-  #geom_text(aes(label = counts), vjust = -0.5, size = 2.5) +
-  scale_y_discrete(expand = c(0.06, 0)) + #expand y-axis 6% in both sides
-  geom_text(data = anova_copper_test, aes(x = ecosystem, y = 15.4, label = groups),
-            vjust = -0.5, size = 2.5, inherit.aes = FALSE) +
-  geom_hline(yintercept = 15.4, linetype = 1, linewidth = 0.1) +
-  scale_x_discrete(expand = expansion(add = 0.85)) + #expand x-axis in units at both sides
-  geom_text(data = head(anova_copper_test2, 5),
-            aes(x = 10.45, y = Definition, label = groups),
-            vjust = -0.2, hjust = 0.25, size = 1.6, inherit.aes = FALSE) +
-  labs(title = "", subtitle = "p = 0.002 **",
+  #scale_y_discrete(expand = c(0.06, 0)) + #expand y-axis 6% in both sides
+  #geom_text(data = anova_copper_test, aes(x = ecosystem, y = 15.4, label = groups),
+  #          vjust = -0.5, size = 2.5, inherit.aes = FALSE) +
+  #geom_hline(yintercept = 15.4, linetype = 1, linewidth = 0.1) +
+  #scale_x_discrete(expand = expansion(add = 0.85)) + #expand x-axis in units at both sides
+  labs(title = "", subtitle = "p = 0.087",
        x = "Ecosystem", y = "KO definitions for copper") +
+  guides(size = guide_legend(title = "Norm. counts")) +
   theme_classic() +
-  theme(legend.title = element_text(size = 10), legend.position = "right",
+  theme(legend.title = element_text(size = 9), legend.position = "right",
         plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic"),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubble_kofam_copper.pdf", kegg_bubble_plot_cu, height = 7, width = 9)
-#ggsave("plot_annot_bubble_kofam_copper.png", kegg_bubble_plot_cu, dpi = 300, dev = "png", height = 7, width = 9.5, units = "in")
+ggsave("plot_annot_bubble_copper.pdf", kegg_bubble_plot_cu, height = 7, width = 9)
 
-kegg_bubble_plot_fe <- ggplot(kegg_bubble_iron,
-                              aes(x = reorder(ecosystem, -counts),
-                                  y = Definition, size = counts, color = ecosystem)) +
+kegg_bubble_plot_fe <- ggplot(kegg_bubble_fe,
+                              aes(x = reorder(ecosystem, -count_norm),
+                                  y = Definition, size = count_norm, color = ecosystem)) +
   geom_point(alpha = 0.7) +
   scale_color_manual(values = mags_colors_eco, guide = "none") +
-  scale_y_discrete(expand = c(0.045, 0)) + #expand y-axis 4.5% in both sides
-  geom_text(data = anova_iron_test,
-            aes(x = ecosystem, y = 20.4, label = groups),
-            vjust = -0.5, size = 2.5, inherit.aes = FALSE) +
-  geom_hline(yintercept = 20.4, linetype = 1, linewidth = 0.1) +
-  scale_x_discrete(expand = expansion(add = 0.85)) + #expand x-axis in units at both sides
-  geom_text(data = head(anova_iron_test2, 5),
-            aes(x = 10.45, y = Definition, label = groups),
-            vjust = -0.2, hjust = 0.25, size = 1.6, inherit.aes = FALSE) +
-  labs(title = "", subtitle = "p = 0.009 **",
+  #scale_y_discrete(expand = c(0.045, 0)) + #expand y-axis 4.5% in both sides
+  #geom_text(data = anova_iron_test,
+  #          aes(x = ecosystem, y = 20.4, label = groups),
+  #          vjust = -0.5, size = 2.5, inherit.aes = FALSE) +
+  #geom_hline(yintercept = 20.4, linetype = 1, linewidth = 0.1) +
+  labs(title = "", subtitle = "p = 0.99",
        x = "Ecosystem", y = "KO definitions for iron") +
+  guides(size = guide_legend(title = "Norm. counts")) +
   theme_classic() +
-  theme(legend.title = element_text(size = 10), legend.position = "right",
+  theme(legend.title = element_text(size = 9), legend.position = "right",
         plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic"),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubble_kofam_iron.pdf", kegg_bubble_plot_fe, height = 7, width = 7)
+ggsave("plot_annot_bubble_iron.pdf", kegg_bubble_plot_fe, height = 7, width = 8)
 
-kegg_bubble_plot_s <- ggplot(kegg_bubble_sulfur,
-                             aes(x = reorder(ecosystem, -counts),
-                                 y = Definition, size = counts, color = ecosystem)) +
+kegg_bubble_plot_s <- ggplot(kegg_bubble_s,
+                             aes(x = reorder(ecosystem, -count_norm),
+                                 y = Definition, size = count_norm, color = ecosystem)) +
   geom_point(alpha = 0.7) +
   scale_color_manual(values = mags_colors_eco, guide = "none") +
-  scale_y_discrete(expand = c(0.03, 0)) + #expand y-axis in both sides 3%
-  geom_text(data = anova_sulfur_test,
-            aes(x = ecosystem, y = 41.6, label = groups),
-            vjust = -0.5, size = 2.5, inherit.aes = FALSE) +
-  geom_hline(yintercept = 41.6, linetype = 1, linewidth = 0.1) +
-  scale_x_discrete(expand = expansion(add = 0.8)) + #expand x-axis in units at both sides
-  geom_text(data = head(anova_sulfur_test2, 7),
-            aes(x = 10.45, y = Definition, label = groups),
-            vjust = -0.2, hjust = 0.25, size = 1.6, inherit.aes = FALSE) +
-  labs(title = "", subtitle = "p = 6.3e-10 ***",
+  #scale_y_discrete(expand = c(0.03, 0)) + #expand y-axis in both sides 3%
+  #geom_text(data = anova_sulfur_test,
+  #          aes(x = ecosystem, y = 41.6, label = groups),
+  #          vjust = -0.5, size = 2.5, inherit.aes = FALSE) +
+  #geom_hline(yintercept = 41.6, linetype = 1, linewidth = 0.1) +
+  labs(title = "", subtitle = "p = 0.062",
        x = "Ecosystem", y = "KO definitions for sulfur") +
+  guides(size = guide_legend(title = "Norm. counts")) +
   theme_classic() +
-  theme(legend.title = element_text(size = 10), legend.position = "right",
+  theme(legend.title = element_text(size = 9), legend.position = "right",
         plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic"),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubble_kofam_sulfur.pdf", kegg_bubble_plot_s, height = 8, width = 9)
+ggsave("plot_annot_bubble_sulfur.pdf", kegg_bubble_plot_s, height = 8, width = 9)
 ```
 
 ## Figure 2
 
 ```{r fig2}
 # Merge plots using patchwork
-fig_2 <- { { kegg_bubble_plot_cu / kegg_bubble_plot_fe +
-    plot_layout(ncol = 1, widths = c(0.75)) } | kegg_bubble_plot_s } +
-  plot_annotation(tag_levels = list(c("a", "b", "c"))) &
+fig_2 <- { { anova_boxplot_cu / anova_boxplot_fe +
+    plot_layout(ncol = 1, widths = c(0.75)) } | anova_boxplot_s / kegg_bubbles_plot } +
+  plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
   theme(plot.tag =  element_text(face = "bold"))
-ggsave("figures/fig_2.pdf", fig_2, height = 14, width = 18)
+ggsave("fig_2.pdf", fig_2, height = 14, width = 18)
+#ggsave("fig_2.png", fig_2, height = 14, width = 18)
 ```
 
-## SNPs
+## Section 3: SNP Calling
+
+### dN/dS analysis
 
 ```{r snps}
-library(VariantAnnotation)
-library(GenomicRanges)
-library(vcfR)
+# Explore CDS annotations (from Bakta)
+snp_refcds <- read.csv("5-SNPs/dndscv/buildref/cds_table.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Load VCF resulting from BCFTools
-vcf_file <- readVcf("../../snps/S15.vcf")
+# Buildref testing for bacteria.. (1 bin)
+#https://github.com/im3sanger/dndscv/issues/62
+#buildref(cdsfile = "5-SNPs/dndscv/buildref/cds_node_25854.txt", genomefile = "5-SNPs/dndscv/buildref/node_25854.fa", outfile = "5-SNPs/dndscv/buildref/testref.rda")
+#load("5-SNPs/dndscv/buildref/testref.rda")
 
-# Header information
-header(vcf_file)
-samples(header(vcf_file))
-geno(header(vcf_file))
-info(header(vcf_file))
+# Buildref for all bins (very slow: ~2 hrs in building object)
+#buildref(cdsfile = "5-SNPs/dndscv/buildref/cds_table.txt", genomefile = "5-SNPs/dndscv/buildref/S15_bins.fa", outfile = "5-SNPs/dndscv/buildref/S15_refcds.rda")
 
-# Genomic positions (CHROM, POS, ID)
-seqnames(vcf_file)
-head(rowRanges(vcf_file), 3)
-ref(vcf_file)[1:5]
-qual(vcf_file)[1:5]
-alt(vcf_file)[1:5]
+# Inspect refdb
+load("5-SNPs/dndscv/buildref/S15_refcds.rda")
+print(RefCDS[[1]])
+rm(gr_genes, RefCDS)
 
-# Genotype data (FORMAT)
-geno(vcf_file)
-dim(geno(vcf_file)$GT)
+# Get annotations from the VCF generated with SnpEff
+#sampleID chr pos ref mut
+snp_mutations <- read.csv("5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+rm(snp_mutations)
 
-# Info data
-info(vcf_file)[1:4, 1:5]
+# Run driver discovery or genes under positive selection (PS) (runtime ~5 min)
+#snp_dndsout <- dndscv(snp_mutations, refdb = "5-SNPs/dndscv/buildref/S15_refcds.rda", cv = NULL, max_muts_per_gene_per_sample = Inf, max_coding_muts_per_sample = Inf)
+#save(snp_dndsout, file = "5-SNPs/dndscv/run/S15_dndsout.rda")
+#load("5-SNPs/dndscv/run/S15_dndsout.rda")
 
-# Plot
-#vcf_plot <- ggplot(data=d.fig5, aes(x=Output, y=bcftools, fill=Output)) +
-#  geom_bar(aes(alpha=0.9), stat="identity", color="black", position=position_dodge()) +
-#  theme_bw() + ylab("Similarity (%)") + xlab("") + expand_limits(y=c(0, 105)) + 
-#  facet_grid(rows = vars(Label_bcftools), cols = vars(Assembler)) +
-#  geom_text(aes(label=mean_bcftools), vjust=-0.3, color="black", size=2.5)
-#ggsave("plot_annot_bubble_kofam_copper.pdf", kegg_bubble_plot, height = 7, width = 9)
+# Explore output object..
+#https://github.com/im3sanger/dndscv/issues/6
+#https://github.com/im3sanger/dndscv/issues/64
+head(snp_dndsout$sel_cv) #dN/dS ratios at gene-level
+head(snp_dndsout$annotmuts)
+print(snp_dndsout$globaldnds) #driver globals
+mean(snp_selcv$wmis_cv) #mis avg.
 
-# Read VCF file with vcfR package
-vcf <- read.vcfR("../../snps/S15.vcf")
+# Save dN/dS per-gene matrix
+snp_selcv <- snp_dndsout$sel_cv
+rm(snp_dndsout)
 
-# Parse DP from the gt region
-#https://onlinelibrary.wiley.com/doi/10.1111/1755-0998.12549
-vcf_dp <- extract.gt(vcf, element = "DP", return.alleles = FALSE)
-vcf_dpf <- melt(vcf_dp, varnames = c("Index", "Sample"), value.name = "Depth", na.rm = TRUE)
+# Group global dN/dS ratios:
+#https://github.com/im3sanger/dndscv/issues/63
+#consider significant p-value -> pmis_cv < 0.05?
+#snp_selcv %>% dplyr::filter(pmis_cv < 0.05) %>% nrow() #n=109523
+snp_global_pos <- snp_selcv %>%
+  dplyr::filter(wmis_cv > 1) %>%
+  dplyr::summarise(genes = n())
+snp_global_pos$label = "dN/dS > 1"
+snp_global_neg <- snp_selcv %>%
+  dplyr::filter(wmis_cv < 1 & wmis_cv != 0) %>%
+  dplyr::summarise(genes = n())
+snp_global_neg$label = "dN/dS < 1"
+snp_global_neu <- snp_selcv %>%
+  dplyr::filter(wmis_cv == 0) %>%
+  dplyr::summarise(genes = n())
+snp_global_neu$label = "dN/dS = 0"
+snp_global_dnds <- rbind(snp_global_pos, snp_global_neg, snp_global_neu)
+snp_global_dnds <- snp_global_dnds %>%
+  dplyr::mutate(perc = round(genes * 100 / sum(snp_global_dnds$genes), 1)) %>% #add %
+  dplyr::mutate(perc2 = paste0(genes, " (", perc, "%)")) #label to plot
+rm(snp_global_pos, snp_global_neg, snp_global_neu) #clean memory
 
-# Render a violin plot
+# Filter genes under PS:
+#https://github.com/im3sanger/dndscv/issues/56
+#wmis_cv: dN/dS for missense mutations
+#pmis_cv: p-value < 0.05 is expected to occur by chance under neutrality (null hypothesis)
+#p-values for multiple testing (q-values)
+#qallsubs_cv = 144 genes; significant q-values (p-values adjusted for multiple testing)
+snp_psgenes <- snp_selcv %>%
+  dplyr::filter(wmis_cv > 1 & pmis_cv < 0.05) %>%
+  dplyr::mutate(dndsr = n_mis / n_syn)
+#snp_psgenes %>% dplyr::filter(dndsr == Inf) %>% nrow() #n=118
 
+# Load contig to bin matrix
+snp_bins <- read.csv("5-SNPs/dndscv/results/S15_DASTool_contig2bin.tsv", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Create a chrom plot
-vcf_chrom <- create.chromR(vcf, name = "S15 NODE_1") #subsetted to the first chromosome
-vcf_chrom <- proc.chromR(vcf_chrom)
-chromoqc(vcf_chrom)
+# Load gene name annotations (from genes.gff file)
+snp_genids <- read.csv("5-SNPs/dndscv/results/gene_id_name.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+## FUNCTIONS ##
+# Function that returns the contig where a gene was found
+fx_dndsGene2Contig <- function(g) {
+  c <- snp_refcds %>%
+    dplyr::filter(gene.name == g) %>%
+    dplyr::select(chr) %>%
+    as.character()
+  return(c)
+}
+# Function that returns the bin given a contig
+fx_dndsContig2Bin <- function(c) {
+  b <- snp_bins %>%
+    dplyr::filter(contig == c) %>%
+    dplyr::select(bin) %>%
+    as.character()
+  return(b)
+}
+# Function that gets gene names
+fx_dndsGeneName <- function(g) {
+  g <- snp_genids %>%
+    dplyr::filter(gene.id == g) %>%
+    dplyr::select(gene.name) %>%
+    as.character()
+  return(g)
+}
+# Function that returns a row with taxa given a bin
+fx_dndsTaxaBin <- function(b) {
+  t <- mag_samples %>%
+    dplyr::mutate(bin = paste0(mag_name, ".", mag_id)) %>%
+    dplyr::filter(bin == b) %>%
+    dplyr::select(phylum, genus, species, completeness, contamination)
+  return(t)
+}
+# Function that process the product tag of NS genes
+fx_dndsNsPathway <- function(p) {
+  if (grepl("copper", p, ignore.case = TRUE) == TRUE)
+    return("Copper")
+  if (grepl("nickel", p, ignore.case = TRUE) == TRUE)
+    return("Nickel")
+  if (grepl("sulfur", p, ignore.case = TRUE) == TRUE)
+    return("Sulfur")
+  if (grepl("mercury", p, ignore.case = TRUE) == TRUE)
+    return("Mercury")
+  if (grepl("nitrogen", p, ignore.case = TRUE) == TRUE)
+    return("Nitrogen")
+}
+# Function that gets dndscv stats for NS genes
+fx_dndsNsStats <- function(g) {
+  s <- snp_selcv %>%
+    dplyr::filter(gene_name == g) %>%
+    dplyr::select(gene_name, wmis_cv, pmis_cv)
+  return(s)
+}
+## END FUNCTIONS ##
+
+# Populate dataset with additional attributes per gene
+snp_gene2contig <- vector()
+snp_contig2bin <- vector()
+snp_genenames <- vector()
+for (i in 1:nrow(snp_psgenes)) {
+	snp_gene2contig <- append(snp_gene2contig, fx_dndsGene2Contig(snp_psgenes$gene_name[i]))
+	snp_contig2bin <- append(snp_contig2bin, fx_dndsContig2Bin(snp_gene2contig[i]))
+	snp_genenames <- append(snp_genenames, fx_dndsGeneName(snp_psgenes$gene_name[i]))
+}
+snp_psgenes['contig'] <- snp_gene2contig
+snp_psgenes['bin'] <- snp_contig2bin
+snp_psgenes['name'] <- snp_genenames
+rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames) #clean memory
+
+# Select PS and add taxonomic classification
+snp_dnds <- snp_psgenes %>%
+  #dplyr::filter(dndsr > 1) %>%
+  dplyr::group_by(bin) %>%
+  dplyr::summarise(num = n()) %>%
+  dplyr::arrange(desc(num))
+
+snp_taxabins <- tibble(phylum = character(), genus = character(), species = character(),
+                       completeness = numeric(), contamination = numeric())
+for (i in 1:nrow(snp_dnds)) {
+  #print(sprintf("%i -> bin: %s", i, fx_dndsTaxaBin(snp_dnds$bin[i])))
+  snp_taxabins <- rbind(snp_taxabins, fx_dndsTaxaBin(snp_dnds$bin[i]))
+}
+snp_dnds['phylum'] <- snp_taxabins$phylum
+snp_dnds['genus'] <- snp_taxabins$genus
+snp_dnds['species'] <- snp_taxabins$species
+snp_dnds['completeness'] <- snp_taxabins$completeness
+snp_dnds['contamination'] <- snp_taxabins$contamination
+rm(snp_taxabins)
+
+# Set unknown genus/species (uGGBs and uSGBs)
+snp_dnds <- snp_dnds %>%
+  dplyr::mutate(genus = ifelse(genus == "", "uGGB", genus)) %>%
+  dplyr::mutate(species = ifelse(species == "", "uSGB", species))
+
+# Subset to plot mutations -> synonymous/missense (non-syn.)/nonsense
+snp_psgenes_sub <- snp_psgenes %>%
+  dplyr::filter(wmis_cv > 5.5) %>%
+  pivot_longer(cols = c(n_syn, n_mis, n_non), names_to = "mut", values_to = "n_mut")
+
+# Barplot global dN/dS ratios
+snp_plot_dndstot <- ggplot(snp_global_dnds, aes(x = genes, y = reorder(label, genes), fill = label)) +
+  geom_col(position = "dodge2", fill = "#4c6194") +
+  geom_text(aes(label = perc2), vjust = 0.5, hjust = -0.1, size = 2) +
+  #scale_fill_manual(values = c("#c56c65", "#778ab3", "#529548")) +
+  scale_x_continuous(limits = c(0, 125000)) +
+  labs(x = "Number of genes", y = "") +
+  theme_classic() +
+  theme(legend.position = "none")
+ggsave("5-SNPs/dndscv/results/plot/plot_dnds_global.pdf", snp_plot_dndstot, height = 3, width = 5)
+
+# Plot global driver genes per taxa
+snp_plot_psbins <- ggplot(snp_dnds, aes(x = num, y = reorder(bin, num), fill = bin)) +
+  geom_bar(stat = "identity", fill = "#E31A1C") +
+  geom_text(aes(label = num), vjust = 0.5, hjust = -0.5, size = 2.5) +
+  labs(x = "Number of genes under PS", y = "Bin") +
+  scale_x_continuous(limits = c(0, 120)) +
+  theme_classic() +
+  theme(strip.background = element_blank()) +
+  facet_grid(.~species)
+ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 8.5, width = 9.5)
+
+# Lollipop plot of PS
+#ggdotchart(snp_psgenes_sub, x = "name", y = "wmis_cv", color = "#E31A1C", rotate = TRUE, sorting = "descending", add = "segments", ggtheme = theme_pubr())
+snp_plot_psgenes <- ggplot(snp_psgenes_sub,
+                           aes(x = wmis_cv, y = reorder(name, wmis_cv)), size = wmis_cv) +
+  geom_segment(aes(x = 0, xend = wmis_cv, y = name), color = "gray") +
+  geom_point(alpha = 0.7, color = "#E31A1C") +
+  geom_vline(xintercept = max(snp_psgenes$wmis_cv), linetype = 1, linewidth = 0.1) +
+  labs(x = "PS strength", y = "Gene CDS") +
+  theme_classic()
+ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psgenes.pdf", snp_plot_psgenes, height = 9, width = 7)
+
+# Plot mutations/genes per type
+snp_plot_muts <- ggplot(snp_psgenes_sub, aes(x = n_mut, y = reorder(name, wmis_cv), fill = mut)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  scale_fill_manual(name = "", labels = c("mis", "non", "syn"),
+                    values = c("#5db4b2", "#b687b6", "#2374a4")) +
+  labs(x = "Number of mutations", y = "") +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.15),
+        strip.placement = "outside",
+        axis.text.y = element_blank(),
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank())
+#ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psmuts.pdf", snp_plot_muts, height = 9, width = 7)
+
+snp_plot_psgenes <- (snp_plot_psgenes | snp_plot_muts) +
+  plot_layout(nrow = 1, ncol = 2, widths = c(0.55, 0.5))
+ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psgenmut.pdf", snp_plot_psgenes, height = 9, width = 9)
+
+# Negative selected (NS) genes with dN/dS < 1 (selected metals)
+snp_nsgenes <- read.csv("5-SNPs/dndscv/results/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+# Parse product to pathway and add additional attributes (wmis_cv, pmis_cv)
+#add dndsr, contig, bin**?
+snp_nspath <- tibble(gene_name = character(), pathway = character())
+snp_nsstat <- tibble(wmis_cv = numeric(), pmis_cv = numeric())
+for (i in 1:nrow(snp_nsgenes)) {
+  #work using dataframes, not lists
+  snp_nspath <- snp_nspath %>%
+    add_row(gene_name = snp_nsgenes$gene_name[i], pathway = fx_dndsNsPathway(snp_nsgenes$product[i]))
+	snp_nsstat <- rbind(snp_nsstat, fx_dndsNsStats(snp_nsgenes$gene_name[i]))
+}
+snp_nsgenes <- left_join(snp_nsgenes, snp_nspath, by = c("gene_name"))
+snp_nsgenes <- left_join(snp_nsgenes, snp_nsstat, by = c("gene_name"))
+rm(snp_nspath, snp_nsstat)
+
+# Remove NA cells and significance: ie. BAOFFNEK_01342 not found
+snp_nsgenes <- snp_nsgenes %>%
+  dplyr::filter(!is.na(pathway) & !(is.na(wmis_cv))) %>%
+  dplyr::filter(wmis_cv != 0 & pmis_cv < 0.05)
+
+# Sort pathways and set colors
+snp_sort_ns <- snp_nsgenes %>%
+  dplyr::group_by(pathway) %>%
+  dplyr::summarise(n = median(wmis_cv)) %>%
+  dplyr::arrange(desc(n)) %>%
+  as.data.frame()
+snp_sort_ns$color <- c("#8c2421", "#4f4fad", "#ca6627", "#6a9b85")
+
+# Violin plot for NS genes with global mutations
+snp_plot_nsmut <- ggviolin(snp_nsgenes, x = "pathway", y = "wmis_cv", color = "pathway",
+                           shape = "pathway", xlab = "Pathway", ylab = "dN/dS",
+                           order = snp_sort_ns$pathway, add = "jitter", legend = "none",
+                           palette = snp_sort_ns$color) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
+  scale_y_continuous(limits = c(-0.2, 1)) +
+  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2)
+ggsave("5-SNPs/dndscv/results/plot/plot_dnds_nsmut.pdf", snp_plot_nsmut, height = 9, width = 7)
+
+# Merge PS and NS gene names
+snp_gmerge <- bind_rows(snp_psgenes, snp_nsgenes)
+snp_gmerge <- snp_gmerge %>%
+  dplyr::mutate(pathway = ifelse(is.na(pathway), "PS", pathway))
+#snp_color_gm <- c("#ddad3b", "#4f4fad", "#6a9b85", "#ca6627", "#8c2421", "black")
+snp_color_gm <- c("#8c2421", "#4f4fad", "#6a9b85", "#ca6627")
+
+# Lollipop plot dN/dS x-axis range 0-2, y-axis PS genes vs selected CDS
+snp_plot_gmerge <- ggdotchart(snp_nsgenes, x = "gene_name", y = "wmis_cv", color = "pathway",
+                              xlab = "Gene CDS", ylab = "dN/dS", y.text.col = FALSE, rotate = TRUE,
+                              palette = snp_color_gm, sorting = "descending", ggtheme = theme_pubr()) +
+  scale_y_continuous(limits = c(0, 0.4)) +
+  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+ggsave("5-SNPs/dndscv/results/plot/plot_dnds_nspath.pdf", snp_plot_gmerge, height = 9, width = 7)
+
+# Genes for enrichment (we need KEGG KOs..)
+#snp_genenrich <- snp_psgenes$dndsr
+#names(snp_genenrich) <- snp_psgenes$name
+#snp_kegg <- enrichKEGG(snp_genenrich, "hsa", pvalueCutoff = 0.05)
+
 ```
 
 ## Figure 3
 
 ```{r fig3}
 # Merge plots using patchwork
-
+fig_3 <- { { anova_boxplot_cu / anova_boxplot_fe +
+    plot_layout(ncol = 1, widths = c(0.75)) } | anova_boxplot_s / kegg_bubbles_plot } +
+  plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
+  theme(plot.tag =  element_text(face = "bold"))
+ggsave("fig_3.pdf", fig_3, height = 14, width = 18)
+ggsave("fig_3.png", fig_3, height = 14, width = 18)
 ```
