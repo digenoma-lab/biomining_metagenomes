@@ -6,8 +6,7 @@ output: github_document
 ---
 
 ```{r setup}
-#knitr::opts_knit$set(root.dir = '/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/analysis/mags-all/analysis/')
-knitr::opts_knit$set(root.dir = '/Users/moises/Downloads/mags-all/')
+knitr::opts_knit$set(root.dir = "/Users/moises/Downloads/")
 
 suppressMessages(library(ape)) #tree basics
 suppressMessages(library(treeio)) #join trees
@@ -578,6 +577,7 @@ fig_1 <- (fig_1a / fig_1b) +
   plot_annotation(tag_levels = list(c("a", "e", "b", "c", "d", "", "f"))) &
   theme(plot.tag =  element_text(face = "bold"))
 ggsave("fig_1.pdf", fig_1, height = 14, width = 14)
+#ggsave("fig_1.png", fig_1, height = 14, width = 14)
 rm(fig_1a, fig_1b)
 
 #fig sup 1
@@ -586,6 +586,8 @@ fig_s1 <- { plot_depth_top_phyla |
   plot_layout(ncol = 2, widths = c(0.25, 1)) +
   plot_annotation(tag_levels = list(c("a", "b", "c"))) &
   theme(plot.tag =  element_text(face = "bold"))
+fig_s1[[2]][[1]] <- fig_s1[[2]][[1]] + theme(axis.title.y = element_text(vjust = 0))
+#fig_s1[[2]][[2]] <- fig_s1[[2]][[2]] + theme(axis.text.y = element_text(vjust = 0))
 ggsave("fig_s1.pdf", fig_s1, height = 8, width = 16)
 #ggsave("fig_s1.png", fig_s1, height = 8, width = 16)
 ```
@@ -1250,40 +1252,50 @@ fig_2 <- { { anova_boxplot_cu / anova_boxplot_fe +
     plot_layout(ncol = 1, widths = c(0.75)) } | anova_boxplot_s / kegg_bubbles_plot } +
   plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
   theme(plot.tag =  element_text(face = "bold"))
+#adjust y-label margin for sulfur plot
+fig_2[[2]][[1]] <- fig_2[[2]][[1]] + theme(axis.title.y = element_text(vjust = -127))
 ggsave("fig_2.pdf", fig_2, height = 14, width = 18)
-#ggsave("fig_2.png", fig_2, height = 14, width = 18)
+#ggsave("fig_2.png", fig_2, height = 14, width = 18) vjust=120
 ```
 
-## Section 3: SNP Calling
+## Section 3: SNP Variant Calling
 
 ### dN/dS analysis
 
 ```{r snps}
-# Explore CDS annotations (from Bakta)
-snp_refcds <- read.csv("5-SNPs/dndscv/buildref/cds_table.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+# Get CDS annotations (pre-processed from Bakta results)
+snp_refcds <- read.csv("mags-all/5-SNPs/dndscv/buildref/cds_table.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 # Buildref testing for bacteria.. (1 bin)
 #https://github.com/im3sanger/dndscv/issues/62
-#buildref(cdsfile = "5-SNPs/dndscv/buildref/cds_node_25854.txt", genomefile = "5-SNPs/dndscv/buildref/node_25854.fa", outfile = "5-SNPs/dndscv/buildref/testref.rda")
-#load("5-SNPs/dndscv/buildref/testref.rda")
+#buildref(cdsfile = "mags-all/5-SNPs/dndscv/buildref/cds_node_25854.txt",
+#         genomefile = "mags-all/5-SNPs/dndscv/buildref/node_25854.fa",
+#         outfile = "mags-all/5-SNPs/dndscv/buildref/testref.rda")
+#load("mags-all/5-SNPs/dndscv/buildref/testref.rda")
 
 # Buildref for all bins (very slow: ~2 hrs in building object)
-#buildref(cdsfile = "5-SNPs/dndscv/buildref/cds_table.txt", genomefile = "5-SNPs/dndscv/buildref/S15_bins.fa", outfile = "5-SNPs/dndscv/buildref/S15_refcds.rda")
+#buildref(cdsfile = "mags-all/5-SNPs/dndscv/buildref/cds_table.txt",
+#         genomefile = "mags-all/5-SNPs/dndscv/buildref/S15_bins.fa",
+#         outfile = "mags-all/5-SNPs/dndscv/buildref/S15_refcds.rda")
 
 # Inspect refdb
-load("5-SNPs/dndscv/buildref/S15_refcds.rda")
-print(RefCDS[[1]])
-rm(gr_genes, RefCDS)
+#load("mags-all/5-SNPs/dndscv/buildref/S15_refcds.rda")
+#print(RefCDS[[1]])
+#rm(gr_genes, RefCDS)
 
-# Get annotations from the VCF generated with SnpEff
+# Get annotations (parsed from the VCF generated with SnpEff)
 #sampleID chr pos ref mut
-snp_mutations <- read.csv("5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-rm(snp_mutations)
+snp_mutations <- read.csv("mags-all/5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Run driver discovery or genes under positive selection (PS) (runtime ~5 min)
-#snp_dndsout <- dndscv(snp_mutations, refdb = "5-SNPs/dndscv/buildref/S15_refcds.rda", cv = NULL, max_muts_per_gene_per_sample = Inf, max_coding_muts_per_sample = Inf)
-#save(snp_dndsout, file = "5-SNPs/dndscv/run/S15_dndsout.rda")
-#load("5-SNPs/dndscv/run/S15_dndsout.rda")
+# Run dndscv (runtime ~8 min, high memory usage) and save object
+#snp_dndsout <- dndscv(snp_mutations, refdb = "mags-all/5-SNPs/dndscv/buildref/S15_refcds.rda",
+#                      max_muts_per_gene_per_sample = Inf, max_coding_muts_per_sample = Inf,
+#                      cv = NULL, outmats = TRUE)
+#save(snp_dndsout, file = "mags-all/5-SNPs/dndscv/run/S15_dndsout.rda")
+#save(substmodel, file = "mags-all/5-SNPs/dndscv/run/S15_substmodel.rda")
+#load("mags-all/5-SNPs/dndscv/run/S15_dndsout.rda")
+#load("mags-all/5-SNPs/dndscv/run/S15_substmodel.rda")
+rm(snp_mutations)
 
 # Explore output object..
 #https://github.com/im3sanger/dndscv/issues/6
@@ -1291,50 +1303,42 @@ rm(snp_mutations)
 head(snp_dndsout$sel_cv) #dN/dS ratios at gene-level
 head(snp_dndsout$annotmuts)
 print(snp_dndsout$globaldnds) #driver globals
-mean(snp_selcv$wmis_cv) #mis avg.
 
 # Save dN/dS per-gene matrix
+#driver discovery or genes under positive selection (PS)
 snp_selcv <- snp_dndsout$sel_cv
 rm(snp_dndsout)
 
 # Group global dN/dS ratios:
 #https://github.com/im3sanger/dndscv/issues/63
-#consider significant p-value -> pmis_cv < 0.05?
-#snp_selcv %>% dplyr::filter(pmis_cv < 0.05) %>% nrow() #n=109523
-snp_global_pos <- snp_selcv %>%
+snp_selcv %>% dplyr::filter(pmis_cv < 0.05) %>% nrow() #n=105328
+snp_global_ps <- snp_selcv %>%
   dplyr::filter(wmis_cv > 1) %>%
   dplyr::summarise(genes = n())
-snp_global_pos$label = "dN/dS > 1"
-snp_global_neg <- snp_selcv %>%
+snp_global_ps$label = "dN/dS > 1"
+snp_global_ns <- snp_selcv %>%
   dplyr::filter(wmis_cv < 1 & wmis_cv != 0) %>%
   dplyr::summarise(genes = n())
-snp_global_neg$label = "dN/dS < 1"
-snp_global_neu <- snp_selcv %>%
-  dplyr::filter(wmis_cv == 0) %>%
-  dplyr::summarise(genes = n())
-snp_global_neu$label = "dN/dS = 0"
-snp_global_dnds <- rbind(snp_global_pos, snp_global_neg, snp_global_neu)
+snp_global_ns$label = "dN/dS < 1"
+snp_global_dnds <- rbind(snp_global_ps, snp_global_ns)
 snp_global_dnds <- snp_global_dnds %>%
-  dplyr::mutate(perc = round(genes * 100 / sum(snp_global_dnds$genes), 1)) %>% #add %
+  dplyr::mutate(perc = round(genes * 100 / nrow(snp_selcv), 2)) %>% #add %
   dplyr::mutate(perc2 = paste0(genes, " (", perc, "%)")) #label to plot
-rm(snp_global_pos, snp_global_neg, snp_global_neu) #clean memory
+rm(snp_global_ps, snp_global_ns) #clean memory
 
 # Filter genes under PS:
 #https://github.com/im3sanger/dndscv/issues/56
 #wmis_cv: dN/dS for missense mutations
-#pmis_cv: p-value < 0.05 is expected to occur by chance under neutrality (null hypothesis)
-#p-values for multiple testing (q-values)
-#qallsubs_cv = 144 genes; significant q-values (p-values adjusted for multiple testing)
+#pmis_cv: p-value (signif. < 0.05) is expected to occur by chance under neutrality (null hypothesis)
 snp_psgenes <- snp_selcv %>%
-  dplyr::filter(wmis_cv > 1 & pmis_cv < 0.05) %>%
-  dplyr::mutate(dndsr = n_mis / n_syn)
-#snp_psgenes %>% dplyr::filter(dndsr == Inf) %>% nrow() #n=118
+  dplyr::filter(wmis_cv > 1) %>%
+  dplyr::mutate(dndsr = round((n_mis / n_syn), 1))
 
 # Load contig to bin matrix
-snp_bins <- read.csv("5-SNPs/dndscv/results/S15_DASTool_contig2bin.tsv", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+snp_bins <- read.csv("mags-all/5-SNPs/dndscv/results/S15_DASTool_contig2bin.tsv", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Load gene name annotations (from genes.gff file)
-snp_genids <- read.csv("5-SNPs/dndscv/results/gene_id_name.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+# Load gene names (parsed from genes.gff file)
+snp_genids <- read.csv("mags-all/5-SNPs/dndscv/results/gene_id_name.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 ## FUNCTIONS ##
 # Function that returns the contig where a gene was found
@@ -1353,7 +1357,7 @@ fx_dndsContig2Bin <- function(c) {
     as.character()
   return(b)
 }
-# Function that gets gene names
+# Function that gets gene names given an id
 fx_dndsGeneName <- function(g) {
   g <- snp_genids %>%
     dplyr::filter(gene.id == g) %>%
@@ -1361,24 +1365,24 @@ fx_dndsGeneName <- function(g) {
     as.character()
   return(g)
 }
-# Function that returns a row with taxa given a bin
+# Function that returns a row with the taxonomic classification of a bin
 fx_dndsTaxaBin <- function(b) {
   t <- mag_samples %>%
     dplyr::mutate(bin = paste0(mag_name, ".", mag_id)) %>%
     dplyr::filter(bin == b) %>%
-    dplyr::select(phylum, genus, species, completeness, contamination)
+    dplyr::select(phylum, genus, species, predicted_genes)
   return(t)
 }
 # Function that process the product tag of NS genes
 fx_dndsNsPathway <- function(p) {
   if (grepl("copper", p, ignore.case = TRUE) == TRUE)
     return("Copper")
+  if (grepl("iron", p, ignore.case = TRUE) == TRUE)
+    return("Iron")
   if (grepl("nickel", p, ignore.case = TRUE) == TRUE)
     return("Nickel")
   if (grepl("sulfur", p, ignore.case = TRUE) == TRUE)
     return("Sulfur")
-  if (grepl("mercury", p, ignore.case = TRUE) == TRUE)
-    return("Mercury")
   if (grepl("nitrogen", p, ignore.case = TRUE) == TRUE)
     return("Nitrogen")
 }
@@ -1405,9 +1409,8 @@ snp_psgenes['bin'] <- snp_contig2bin
 snp_psgenes['name'] <- snp_genenames
 rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames) #clean memory
 
-# Select PS and add taxonomic classification
+# Group PS genes to add taxa & QC
 snp_dnds <- snp_psgenes %>%
-  #dplyr::filter(dndsr > 1) %>%
   dplyr::group_by(bin) %>%
   dplyr::summarise(num = n()) %>%
   dplyr::arrange(desc(num))
@@ -1421,8 +1424,7 @@ for (i in 1:nrow(snp_dnds)) {
 snp_dnds['phylum'] <- snp_taxabins$phylum
 snp_dnds['genus'] <- snp_taxabins$genus
 snp_dnds['species'] <- snp_taxabins$species
-snp_dnds['completeness'] <- snp_taxabins$completeness
-snp_dnds['contamination'] <- snp_taxabins$contamination
+snp_dnds['predicted_genes'] <- snp_taxabins$predicted_genes
 rm(snp_taxabins)
 
 # Set unknown genus/species (uGGBs and uSGBs)
@@ -1430,45 +1432,64 @@ snp_dnds <- snp_dnds %>%
   dplyr::mutate(genus = ifelse(genus == "", "uGGB", genus)) %>%
   dplyr::mutate(species = ifelse(species == "", "uSGB", species))
 
-# Subset to plot mutations -> synonymous/missense (non-syn.)/nonsense
+# Subset PS genes to plot mutations -> synonymous/missense (non-syn.)/nonsense
+#discard HPs (by name)
+#genes with at least 5 SNPs
+#mark genes reaching significance (q < 0.05)
+#mark genes: KJCAEPPB_04437 -> nickel pathway; NEBJFEFK_01910 -> sulfur pathway
 snp_psgenes_sub <- snp_psgenes %>%
-  dplyr::filter(wmis_cv > 5.5) %>%
+  dplyr::filter(nchar(name) < 14) %>%
+  dplyr::mutate(snps = n_syn + n_mis + n_non) %>%
+  dplyr::filter(snps >= 4) %>%
+  dplyr::mutate(signif = ifelse(pmis_cv < 0.05, "*", "")) %>%
+  dplyr::mutate(path = case_when(gene_name == "KJCAEPPB_04437" ~ "Ni",
+                                 gene_name == "NEBJFEFK_01910" ~ "S", TRUE ~ "")) %>%
+  distinct(name, .keep_all = TRUE) %>% #remove repeated names
   pivot_longer(cols = c(n_syn, n_mis, n_non), names_to = "mut", values_to = "n_mut")
 
-# Barplot global dN/dS ratios
-snp_plot_dndstot <- ggplot(snp_global_dnds, aes(x = genes, y = reorder(label, genes), fill = label)) +
+# Save PS gene names and ids to file
+if (file.exists("mags-all/5-SNPs/dndscv/results/ps_genes.txt") == FALSE) {
+  write.table(snp_psgenes_sub %>% dplyr::select(gene_name) %>% distinct(gene_name), "mags-all/5-SNPs/dndscv/results/ps_genes.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+}
+if (file.exists("mags-all/5-SNPs/dndscv/results/kofam/ps_genes_ids.txt") == FALSE) {
+  write.table(snp_psgenes_sub %>% dplyr::select(name) %>% distinct(name), "mags-all/5-SNPs/dndscv/results/kofam/ps_genes_ids.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+}
+
+# Barplot with global dN/dS ratios
+snp_plot_dndsglob <- ggplot(snp_global_dnds, aes(x = genes, y = reorder(label, genes), fill = label)) +
   geom_col(position = "dodge2", fill = "#4c6194") +
   geom_text(aes(label = perc2), vjust = 0.5, hjust = -0.1, size = 2) +
-  #scale_fill_manual(values = c("#c56c65", "#778ab3", "#529548")) +
-  scale_x_continuous(limits = c(0, 125000)) +
+  scale_x_continuous(limits = c(0, 16000)) +
   labs(x = "Number of genes", y = "") +
   theme_classic() +
   theme(legend.position = "none")
-ggsave("5-SNPs/dndscv/results/plot/plot_dnds_global.pdf", snp_plot_dndstot, height = 3, width = 5)
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_global.pdf", snp_plot_dndsglob, height = 2, width = 5)
 
-# Plot global driver genes per taxa
+# Plot global driver genes by species
 snp_plot_psbins <- ggplot(snp_dnds, aes(x = num, y = reorder(bin, num), fill = bin)) +
   geom_bar(stat = "identity", fill = "#E31A1C") +
   geom_text(aes(label = num), vjust = 0.5, hjust = -0.5, size = 2.5) +
   labs(x = "Number of genes under PS", y = "Bin") +
-  scale_x_continuous(limits = c(0, 120)) +
+  scale_x_continuous(limits = c(0, 255)) +
   theme_classic() +
   theme(strip.background = element_blank()) +
   facet_grid(.~species)
-ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 8.5, width = 9.5)
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 8.5, width = 9.5)
 
-# Lollipop plot of PS
-#ggdotchart(snp_psgenes_sub, x = "name", y = "wmis_cv", color = "#E31A1C", rotate = TRUE, sorting = "descending", add = "segments", ggtheme = theme_pubr())
+# Lollipop plot of PS genes
 snp_plot_psgenes <- ggplot(snp_psgenes_sub,
                            aes(x = wmis_cv, y = reorder(name, wmis_cv)), size = wmis_cv) +
   geom_segment(aes(x = 0, xend = wmis_cv, y = name), color = "gray") +
   geom_point(alpha = 0.7, color = "#E31A1C") +
-  geom_vline(xintercept = max(snp_psgenes$wmis_cv), linetype = 1, linewidth = 0.1) +
+  geom_text(aes(label = signif, x = -0.15), size = 3, color = "#3c4d76") +
+  geom_text(aes(label = path, x = -0.15), size = 2, color = "#3c4d76") +
+  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.2) +
+  geom_vline(xintercept = max(snp_psgenes_sub$wmis_cv), linetype = 1, linewidth = 0.2) +
   labs(x = "PS strength", y = "Gene CDS") +
   theme_classic()
-ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psgenes.pdf", snp_plot_psgenes, height = 9, width = 7)
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psgenes.pdf", snp_plot_psgenes, height = 11, width = 7)
 
-# Plot mutations/genes per type
+# Plot PS genes mutations per type
 snp_plot_muts <- ggplot(snp_psgenes_sub, aes(x = n_mut, y = reorder(name, wmis_cv), fill = mut)) +
   geom_col(position = position_stack(reverse = TRUE)) +
   scale_fill_manual(name = "", labels = c("mis", "non", "syn"),
@@ -1480,21 +1501,21 @@ snp_plot_muts <- ggplot(snp_psgenes_sub, aes(x = n_mut, y = reorder(name, wmis_c
         axis.text.y = element_blank(),
         axis.line.y = element_blank(),
         axis.ticks.y = element_blank())
-#ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psmuts.pdf", snp_plot_muts, height = 9, width = 7)
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psmuts.pdf", snp_plot_muts, height = 11, width = 7)
 
 snp_plot_psgenes <- (snp_plot_psgenes | snp_plot_muts) +
   plot_layout(nrow = 1, ncol = 2, widths = c(0.55, 0.5))
-ggsave("5-SNPs/dndscv/results/plot/plot_dnds_psgenmut.pdf", snp_plot_psgenes, height = 9, width = 9)
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psgenmuts.pdf", snp_plot_psgenes, height = 11, width = 11)
+rm(snp_plot_muts)
 
-# Negative selected (NS) genes with dN/dS < 1 (selected metals)
-snp_nsgenes <- read.csv("5-SNPs/dndscv/results/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+# Load negative selected (NS) genes
+snp_nsgenes <- read.csv("mags-all/5-SNPs/dndscv/results/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Parse product to pathway and add additional attributes (wmis_cv, pmis_cv)
-#add dndsr, contig, bin**?
+# Infer pathway from product and add dnds attributes
 snp_nspath <- tibble(gene_name = character(), pathway = character())
 snp_nsstat <- tibble(wmis_cv = numeric(), pmis_cv = numeric())
 for (i in 1:nrow(snp_nsgenes)) {
-  #work using dataframes, not lists
+  #use dataframes, not lists
   snp_nspath <- snp_nspath %>%
     add_row(gene_name = snp_nsgenes$gene_name[i], pathway = fx_dndsNsPathway(snp_nsgenes$product[i]))
 	snp_nsstat <- rbind(snp_nsstat, fx_dndsNsStats(snp_nsgenes$gene_name[i]))
@@ -1503,61 +1524,151 @@ snp_nsgenes <- left_join(snp_nsgenes, snp_nspath, by = c("gene_name"))
 snp_nsgenes <- left_join(snp_nsgenes, snp_nsstat, by = c("gene_name"))
 rm(snp_nspath, snp_nsstat)
 
-# Remove NA cells and significance: ie. BAOFFNEK_01342 not found
+# Filter NS genes not called in dndscv
+#omit significance (pmis_cv < 0.05)
+#discard nitrogen (not enough genes)
+#change %2C to comma
 snp_nsgenes <- snp_nsgenes %>%
-  dplyr::filter(!is.na(pathway) & !(is.na(wmis_cv))) %>%
-  dplyr::filter(wmis_cv != 0 & pmis_cv < 0.05)
+  dplyr::filter(!(is.na(wmis_cv)) & wmis_cv < 1 & wmis_cv != 0 & pathway != "Nitrogen") %>%
+  dplyr::mutate(product = str_replace_all(product, "%2C", ","))
 
-# Sort pathways and set colors
+# Save NS gene ids to file
+if (file.exists("mags-all/5-SNPs/dndscv/results/kofam/ns_genes_ids.txt") == FALSE) {
+  write.table(snp_nsgenes$gene_id, "mags-all/5-SNPs/dndscv/results/kofam/ns_genes_ids.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+}
+
+# Sort pathways and set colors to plot
 snp_sort_ns <- snp_nsgenes %>%
   dplyr::group_by(pathway) %>%
-  dplyr::summarise(n = median(wmis_cv)) %>%
+  dplyr::summarise(n = mean(wmis_cv)) %>%
   dplyr::arrange(desc(n)) %>%
   as.data.frame()
-snp_sort_ns$color <- c("#8c2421", "#4f4fad", "#ca6627", "#6a9b85")
+snp_sort_ns$color <- c("#ddad3b", "#8c2421", "#666666", "#4f4fad") #"#6a9b85"
 
 # Violin plot for NS genes with global mutations
-snp_plot_nsmut <- ggviolin(snp_nsgenes, x = "pathway", y = "wmis_cv", color = "pathway",
-                           shape = "pathway", xlab = "Pathway", ylab = "dN/dS",
-                           order = snp_sort_ns$pathway, add = "jitter", legend = "none",
-                           palette = snp_sort_ns$color) +
+snp_plot_nsgenes <- ggviolin(snp_nsgenes, x = "pathway", y = "wmis_cv", color = "pathway",
+                             shape = "pathway", xlab = "Pathway", ylab = "dN/dS",
+                             order = snp_sort_ns$pathway, add = "jitter", legend = "none",
+                             palette = snp_sort_ns$color) +
+  scale_y_continuous(limits = c(-0.2, 1.2)) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
-  scale_y_continuous(limits = c(-0.2, 1)) +
-  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2)
-ggsave("5-SNPs/dndscv/results/plot/plot_dnds_nsmut.pdf", snp_plot_nsmut, height = 9, width = 7)
-
-# Merge PS and NS gene names
-snp_gmerge <- bind_rows(snp_psgenes, snp_nsgenes)
-snp_gmerge <- snp_gmerge %>%
-  dplyr::mutate(pathway = ifelse(is.na(pathway), "PS", pathway))
-#snp_color_gm <- c("#ddad3b", "#4f4fad", "#6a9b85", "#ca6627", "#8c2421", "black")
-snp_color_gm <- c("#8c2421", "#4f4fad", "#6a9b85", "#ca6627")
-
-# Lollipop plot dN/dS x-axis range 0-2, y-axis PS genes vs selected CDS
-snp_plot_gmerge <- ggdotchart(snp_nsgenes, x = "gene_name", y = "wmis_cv", color = "pathway",
-                              xlab = "Gene CDS", ylab = "dN/dS", y.text.col = FALSE, rotate = TRUE,
-                              palette = snp_color_gm, sorting = "descending", ggtheme = theme_pubr()) +
-  scale_y_continuous(limits = c(0, 0.4)) +
   geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2) +
-  theme(axis.text.y = element_blank(),
-        axis.ticks.y = element_blank())
-ggsave("5-SNPs/dndscv/results/plot/plot_dnds_nspath.pdf", snp_plot_gmerge, height = 9, width = 7)
+  stat_compare_means(method = "anova", label.y = 1.2) +
+  stat_compare_means(comparisons = list(c("Copper", "Iron"), c("Sulfur", "Nickel")),
+                     label = "p.format", method = "t.test")
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_nsgenes.pdf", snp_plot_nsgenes, height = 9, width = 7)
 
-# Genes for enrichment (we need KEGG KOs..)
-#snp_genenrich <- snp_psgenes$dndsr
-#names(snp_genenrich) <- snp_psgenes$name
-#snp_kegg <- enrichKEGG(snp_genenrich, "hsa", pvalueCutoff = 0.05)
+# Merge NS genes to unique products
+snp_nsgenes_sub <- snp_nsgenes %>%
+  dplyr::group_by(product, pathway) %>%
+  dplyr::summarise(dnds = mean(wmis_cv))
+snp_nsgenes_sub_col <- c("#8c2421", "#666666", "#4f4fad", "#ddad3b")
 
+# Lollipop plot of NS genes dN/dS x-axis range 0-2, y-axis PS genes vs selected CDS
+snp_plot_nsgensub <- ggdotchart(snp_nsgenes_sub, x = "product", y = "dnds", color = "pathway",
+                              xlab = "NS gene product", ylab = "dN/dS", y.text.col = FALSE,
+                              rotate = TRUE, palette = snp_nsgenes_sub_col,
+                              sorting = "descending", ggtheme = theme_pubr()) +
+  scale_y_continuous(limits = c(0, 1)) +
+  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2)
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_nsgenespath.pdf", snp_plot_nsgensub, height = 9, width = 10)
+
+# Count total SNPs per mutation type for phylum
+snp_topphyla <- snp_psgenes %>%
+  dplyr::select(gene_name, n_syn, n_mis, n_non, bin, name) %>%
+  dplyr::mutate(snps = n_syn + n_mis + n_non)
+snp_topphyla <- snp_topphyla %>%
+  dplyr::group_by(bin) %>%
+  dplyr::summarise(sum_nsyn = sum(n_syn),
+                   sum_nmis = sum(n_mis),
+                   sum_nnon = sum(n_non))
+snp_topphyla <- left_join(snp_topphyla, snp_dnds, by = c("bin")) %>%
+  dplyr::select(-c("num", "genus", "species")) %>%
+  pivot_longer(cols = c(sum_nsyn, sum_nmis, sum_nnon, predicted_genes),
+               names_to = "muts", values_to = "nmuts")
+#top 3 phyla and merge
+snp_topphyla <- snp_topphyla %>%
+  dplyr::filter(phylum == "Proteobacteria" | phylum == "Acidobacteriota" |
+                  phylum == "Actinobacteriota") %>%
+  dplyr::group_by(phylum, muts) %>%
+  dplyr::summarise(tot = sum(nmuts), .groups = "drop")
+
+# Barplot #snps/#genes
+snp_plot_topphy <- ggplot(snp_topphyla, aes(x = reorder(phylum, -tot), y = tot, fill = muts)) +
+  geom_col(position = position_stack(reverse = TRUE)) +
+  #geom_text(aes(label = tot), position = position_stack(reverse = TRUE), size = 2, vjust = 0.5) +
+  scale_fill_manual(name = "", labels = c("gen", "mis", "non", "syn"),
+                    values = c("#cba993", "#5db4b2", "#b687b6", "#2374a4")) +
+  scale_y_continuous(limits = c(0, 70000)) +
+  labs(x = "Phylum", y = "Number of PS mutations per type") +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.9),
+        strip.placement = "outside")
+ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_topphyla.pdf", snp_plot_topphy, height = 7, width = 5)
+
+### ###
+# Merge PS and NS gene names
+#snp_gmerge <- bind_rows(snp_psgenes, snp_nsgenes)
+#snp_gmerge <- snp_gmerge %>% dplyr::mutate(pathway = ifelse(is.na(pathway), "PS", pathway))
+#snp_color_gm <- c("#ddad3b", "#4f4fad", "#6a9b85", "#ca6627", "#8c2421", "black")
+### ###
+
+# PS genes for enrichment (we need KEGG KOs from KOfamScan)
+snp_psenrich <- read.csv("mags-all/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+
+# Reduce to unique KOs, saving scores (eq. to foldchange?)
+snp_psenrich <- snp_psenrich %>%
+  dplyr::filter(V1 == "*") %>%
+  dplyr::group_by(V3, V7) %>%
+  dplyr::summarise(sum = n(), score = mean(log2(V4)), .groups = "drop") %>%
+  dplyr::rename(KO = V3, KO_definition = V7)
+#create a named vector
+#snp_kegglist <- snp_psenrich$score
+#names(snp_kegglist) <- snp_psenrich$KO
+
+# Get KEGG KO & pathway data
+snp_keggdata <- download_KEGG(species = "ko")
+snp_keggpat <- snp_keggdata$KEGGPATHID2NAME
+snp_keggkos <- snp_keggdata$KEGGPATHID2EXTID
+rm(snp_keggdata)
+
+# Enrich the genes by KO
+#https://www.biostars.org/p/494567/
+snp_keggenrich <- enricher(gene = snp_psenrich$KO, TERM2GENE = snp_keggkos,
+                           TERM2NAME = snp_keggpat, pAdjustMethod = "BH", pvalueCutoff = 0.05)
+
+# Dotplot
+pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_enrichdot.pdf", height = 9, width = 7)
+dotplot(snp_keggenrich, showCategory = 30)
+dev.off()
+
+# Barplot
+pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_enrichbar.pdf", height = 9, width = 7)
+barplot(snp_keggenrich, showCategory = 30)
+dev.off()
+
+# Category netplot
+pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_enrichnet.pdf", height = 9, width = 13)
+cnetplot(snp_keggenrich, showCategory = 30, categorySize = "pvalue", foldChange = snp_psenrich$KO)
+dev.off()
+
+# Upset plot (overlaps among different genes)
+upsetplot(snp_keggenrich)
 ```
 
 ## Figure 3
 
 ```{r fig3}
+{ { anova_boxplot_cu / anova_boxplot_fe +
+    plot_layout(ncol = 1, widths = c(0.75)) } | anova_boxplot_s / kegg_bubbles_plot }
 # Merge plots using patchwork
-fig_3 <- { { anova_boxplot_cu / anova_boxplot_fe +
-    plot_layout(ncol = 1, widths = c(0.75)) } | anova_boxplot_s / kegg_bubbles_plot } +
-  plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
+fig_3 <- { { snp_plot_dndsglob + snp_plot_psgenes + snp_plot_topphy +
+    plot_layout(ncol = 3, widths = c(0.25, 0.75, 0.75)) } |
+    snp_plot_nsgenes + snp_plot_nsgensub } +
+  plot_annotation(tag_levels = list(c("a", "b", "c", "d", "e"))) &
   theme(plot.tag =  element_text(face = "bold"))
 ggsave("fig_3.pdf", fig_3, height = 14, width = 18)
-ggsave("fig_3.png", fig_3, height = 14, width = 18)
+
+#fig_s3 <- {snp_plot_psbins}
 ```
