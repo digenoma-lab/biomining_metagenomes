@@ -4,11 +4,7 @@ Repository that holds data, scripts and figures regarding to Biomining MAGs-SMAG
 
 ## Section 1: Taxonomy
 
-Done.
-
 ## Section 2: Metabolism
-
-Done.
 
 ## Section 3: Evolution
 
@@ -73,7 +69,7 @@ snp_dndsout <- dndscv(snp_mutations, refdb = "dndscv/buildref/S15_refcds.rda",
                       cv = NULL, outmats = TRUE)
 save(snp_dndsout, file = "dndscv/run/S15_dndsout.rda")
 
-#resulting objects (stored in the path: ```/mnt/beegfs/home/mrojas/snpEff/dndscv```):
+#resulting objects (stored in the path: /mnt/beegfs/home/mrojas/snpEff/dndscv):
 buildref: S15_refcds.rda (118.8 Mb)
 output: S15_dndsout.rda (545.9 Mb)
 ```
@@ -82,39 +78,37 @@ output: S15_dndsout.rda (545.9 Mb)
 
 ```
 |- data/
-|	|- dndscv/
-|	|	|- cds_table.txt
-|	|	|- parse_cds.py
-|	|	|- parse_snpeff.py
-|	|	|- S15_DASTool_contig2bin.tsv
-|	|	|- S15_mutations.txt
-|	|- MAG_SMAG/
-|	|	|- mags_biomining.tsv
-|	|	|- mags_metadata.tsv
-|	|	|- mags_metadata_bac.tsv
-|	|	|- smag_data.tsv
-|	|	|- smag_filtered_bins.tsv
-|	|	|- SMAG_mag20177_refined.tree
-|	|- QC/
-|	|	|- checkm_parsed_bins.tsv
-|	|	|- checkm_qa.tsv
-|	|- taxonomy/
-|	|	|- bins_refined_list.tsv
-|	|	|- gtdbtk_classification.tsv
-|	|	|- gtdbtk_summary.tsv
-|	|	|- gtdbtk.DASTool-S15.tree
+| |- dndscv/
+| | |- cds_table.txt
+| | |- parse_cds.py
+| | |- parse_snpeff.py
+| | |- S15_DASTool_contig2bin.tsv
+| | |- S15_mutations.txt
+| |- MAG_SMAG/
+| | |- mags_biomining.tsv
+| | |- mags_metadata.tsv
+| | |- mags_metadata_bac.tsv
+| | |- smag_data.tsv
+| | |- smag_filtered_bins.tsv
+| | |- SMAG_mag20177_refined.tree
+| |- QC/
+| | |- checkm_parsed_bins.tsv
+| | |- checkm_qa.tsv
+| |- taxonomy/
+| | |- bins_refined_list.tsv
+| | |- gtdbtk_classification.tsv
+| | |- gtdbtk_summary.tsv
+| | |- gtdbtk.DASTool-S15.tree
 |- figures/
-|	|- fig_1.pdf
-|	|- fig_2.pdf
-|	|- fig_3.png
-|	|- fig_s1.pdf
-|	|- fig_s2.png
-|	|- fig_s3.png
+| |- fig_1.pdf
+| |- fig_2.pdf
+| |- fig_3.png
+| |- fig_s1.png
+| |- fig_s2.png
+| |- fig_s3.png
+| |- fig_s3c.png
 |- R/
-|	|- parsers/
-|	|	|- checkm_bins.R
-|	|	|- get_gtdb_taxa.R
-|	|	|- paper_filter_metadata.Rmd
-|	|	|- paper.Rmd
-|	|	|- paper.RData
+| |- paper_filter_metadata.Rmd
+| |- paper.Rmd
+| |- paper.RData
 ```
