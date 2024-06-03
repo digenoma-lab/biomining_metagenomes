@@ -106,7 +106,6 @@ output: S15_dndsout.rda (545.9 Mb)
 | |- fig_s1.png
 | |- fig_s2.png
 | |- fig_s3.png
-| |- fig_s3c.png
 |- R/
 | |- paper_filter_metadata.Rmd
 | |- paper.Rmd
