@@ -1,7 +1,7 @@
 ---
-title: "Systemix Article: Combined MAG-SMAG Profiling"
+title: "Systemix MAG-SMAG Profiling"
 author: "Moises A. Rojas"
-date: "2023-12-01 // mod. Mar 2024"
+date: "2023-12-01 // mod. Mar 2024 // rev. Jun 2024"
 output: github_document
 ---
 
@@ -36,13 +36,11 @@ suppressWarnings(library(circlize)) #circular viz
 
 ```{r magdata}
 # Read Systemix MAGs taxonomy and QC files
-gtdb_taxonomy <- read.csv("1-taxonomy/gtdbtk_classification.tsv", sep = "\t", stringsAsFactors = FALSE)
-mags_qc <- read.csv("2-statistics/checkm_parsed_bins.tsv", sep = "\t")
+gtdb_taxonomy <- read.csv("article_profiling/1-taxonomy/gtdbtk_classification.tsv", sep = "\t", stringsAsFactors = FALSE)
+mags_qc <- read.csv("article_profiling/2-statistics/checkm_parsed_bins.tsv", sep = "\t")
 
 # Inspect completeness and contamination per sample, then select one
-filter(mags_qc, grepl("\\-S15\\.", bin)) %>%
-  dplyr::select(2:3) %>%
-  summary()
+filter(mags_qc, grepl("\\-S15\\.", bin)) %>% dplyr::select(2:3) %>% summary()
 mag_samples <- filter(gtdb_taxonomy, grepl("\\-S15\\.", genome))
 
 # Add QC attributes
@@ -56,17 +54,16 @@ mag_samples <- mag_samples %>%
 mag_samples <- mag_samples %>% separate(bin, "\\.", into = c("mag_name", "mag_id"))
 
 # Define final attributes
-mag_samples['mag_num'] <- nrow(mag_samples)
-mag_samples['ecosystem'] <- "Biomining"
-mag_samples['continent'] <- "South America"
+mag_samples["mag_num"] <- nrow(mag_samples)
+mag_samples["ecosystem"] <- "Biomining"
+mag_samples["continent"] <- "South America"
 
 # Load SMAG catalog (metadata from tables 1-2)
 smag_md1 <- read.xlsx("/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/SMAG/Extended_Data_Table_1.xlsx")
 smag_md2 <- read.xlsx("/mnt/beegfs/home/mrojas/DiGenomaLab/Systemix/SMAG/Extended_Data_Table_2.xlsx")
 
 # Save attributes
-smag_md1_sel <- smag_md1 %>%
-  dplyr::select("mag_name", "mag_num", "Ecosystem", "Continent")
+smag_md1_sel <- smag_md1 %>% dplyr::select("mag_name", "mag_num", "Ecosystem", "Continent")
 smag_md2_sel <- smag_md2 %>%
   dplyr::select("user_genome", "completeness", "contamination",
                 "strain_heterogeneity", "length", "N50", "classification",
@@ -83,7 +80,6 @@ colnames(smag_data)[6] <- "genome_size"
 colnames(smag_data)[8] <- "kingdom"
 colnames(smag_data)[16] <- "ecosystem"
 colnames(smag_data)[17] <- "continent"
-
 colnames(smag_data)[7] <- "kingdom"
 colnames(smag_data)[14] <- "ecosystem"
 colnames(smag_data)[15] <- "continent"
@@ -109,9 +105,9 @@ rm(smag_md1, smag_md2, smag_md1_sel, smag_md2_sel)
 #rm(list = ls(pattern = "^kegg_hm_cols_"))
 ```
 
-## Section 1: In-depth taxonomy analysis 
+## Section 1: Taxonomic analysis 
 
-### Biomining MAGs vs SMAG taxa comparison
+### In-depth biomining MAGs vs SMAG comparison
 
 ```{r magcombtaxa}
 # Biomining provides a new phylum -> Nitrospirota_A
@@ -123,9 +119,8 @@ mags_metadata %>%
   dplyr::group_by(mag_name) %>%
   dplyr::summarise() #n=401
 
-# Keep only bacteria and defined ecosystems (discard archaea kingdom and non-NA eco.)
-mags_metadata_bac <- mags_metadata %>%
-  dplyr::filter(kingdom == "Bacteria" & !is.na(ecosystem)) #n=32975
+# Keep only bacteria and known ecosystems (n = 32975)
+mags_metadata_bac <- mags_metadata %>% dplyr::filter(kingdom == "Bacteria" & !is.na(ecosystem))
 
 # Save bacterial metadata to file
 if (file.exists("4-mags-smag/mags_metadata_bac.tsv") == FALSE) {
@@ -139,13 +134,16 @@ mags_md_top_phy <- table(mags_metadata_bac$phylum) %>%
   as.data.frame() %>%
   dplyr::rename(phy_top = Var1, freq = Freq)
 
-plot_depth_top_phyla <- ggplot(mags_md_top_phy, aes(x = freq, y = reorder(phy_top, freq))) +
+plot_depth_top_phyla <- mags_md_top_phy %>%
+  ggplot(aes(x = freq, y = reorder(phy_top, freq))) +
   geom_bar(stat = "identity", fill = "#459682") +
-  geom_text(aes(label = freq), vjust = 0.5, hjust = -0.5, size = 2.5) +
+  geom_text(aes(label = freq), vjust = 0.5, hjust = -0.25, size = 3) +
   labs(x = "Number", y = "Phylum") +
   scale_x_continuous(limits = c(0, 10000)) +
-  theme_classic()
-ggsave("plot_md_top_phyla.pdf", plot_depth_top_phyla, height = 7, width = 6)
+  theme_classic() +
+  theme(axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16))
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_top_phyla.pdf", plot_depth_top_phyla, height = 7, width = 6)
 
 # Filter metadata..
 # Set colors for ecosystem
@@ -168,14 +166,17 @@ mags_depth_spec <- mags_metadata_bac[mags_metadata_bac$species %in%
 plot_depth_spec <- ggplot(mags_depth_spec) +
   geom_bar(aes(x = species, fill = phylum)) +
   labs(x = "", y = "Number of kSGBs from biomining") +
-  scale_fill_manual(values = "#78Acc2") +
+  scale_fill_manual(values = "#78acc2") +
+  coord_flip() +
   theme_classic() +
   theme(legend.title = element_blank(),
         legend.position = c(0.88, 0.12),
-        strip.background = element_blank()) +#axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)
-  facet_grid(.~ecosystem) +
-  coord_flip()
-ggsave("plot_md_biom_species.pdf", plot_depth_spec, height = 2.5, width = 8)
+        strip.background = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text.x = element_text(size = 10)) +
+  facet_grid(.~ecosystem)
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_biom_species.pdf", plot_depth_spec, height = 3, width = 9)
 
 # Which ecosystem has more known species (# and ratio)?
 mags_depth_spec_eco <- mags_metadata_bac %>%
@@ -199,17 +200,19 @@ mags_depth_spec_eco <- mags_depth_spec_eco %>%
   dplyr::mutate(mags = replace(mags, ecosystem == "Biomining", 1)) %>%
   dplyr::mutate(ratio = count_eco / mags) #max 6.52
 
-plot_depth_spec_eco <- ggplot(mags_depth_spec_eco, aes(x = reorder(ecosystem, ratio),
-                                                       y = ratio, fill = ecosystem)) +
+plot_depth_spec_eco <- mags_depth_spec_eco %>%
+  ggplot(aes(x = reorder(ecosystem, ratio), y = ratio, fill = ecosystem)) +
   geom_bar(stat = "identity") +
-  geom_text(aes(label = round(ratio, 2)), vjust = 0.5, hjust = -0.5, size = 3) +
-  labs(x = "Ecosystem", y = "Number of kSGBs / MAGs") +
+  geom_text(aes(label = round(ratio, 2)), vjust = 0.5, hjust = -0.25, size = 3) +
+  labs(x = "Ecosystem", y = "Number of kSGBs/MAGs") +
   scale_y_continuous(limits = c(0, 10)) +
   scale_fill_manual(values = mags_colors_eco) +
+  coord_flip() +
   theme_classic() +
-  theme(legend.position = "none") +
-  coord_flip()
-ggsave("plot_md_species_eco.pdf", plot_depth_spec_eco, height = 7, width = 6)
+  theme(legend.position = "none",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_species_eco.pdf", plot_depth_spec_eco, height = 7, width = 6)
 
 # What about unknown/known species-level genome bins (SGBs) at phylum level?
 mags_depth_sgbs <- mags_metadata_bac %>%
@@ -224,16 +227,18 @@ mags_depth_sgbs <- mags_metadata_bac %>%
   dplyr::arrange(desc(t_phy)) %>%
   pivot_longer(cols = c(n_spe, diff_k), names_to = "cond", values_to = "tot")
 
-plot_depth_sgbs <- ggplot(mags_depth_sgbs[1:60, ],
-                          aes(x = reorder(phylum, tot), y = tot, fill = cond)) +
+plot_depth_sgbs <- mags_depth_sgbs[1:60, ] %>%
+  ggplot(aes(x = reorder(phylum, tot), y = tot, fill = cond)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#DD7E8B", "#459682")) +
+  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#dd7e8b", "#459682")) +
   scale_y_continuous(limits = c(0, 8000)) +
   labs(x = "Phylum", y = "Number of species") +
+  coord_flip() +
   theme_classic() +
-  theme(legend.position = c(0.85, 0.15), strip.placement = "outside") +
-  coord_flip()
-#ggsave("plot_md_SGBs_phylum.pdf", plot_depth_sgbs, height = 7, width = 6)
+  theme(legend.position = c(0.85, 0.15),
+        strip.placement = "outside",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
 
 #add % column
 mags_depth_sgbs_p <- mags_depth_sgbs %>%
@@ -242,23 +247,25 @@ mags_depth_sgbs_p <- mags_depth_sgbs %>%
   pivot_longer(cols = c(perc_u, perc_k), names_to = "cond_p", values_to = "tot_p") %>%
   dplyr::filter(cond == "n_spe") #just to remove 1 row per phylum/cond
 
-plot_depth_sgbs_p <- ggplot(mags_depth_sgbs_p[1:60, ],
-                            aes(x = reorder(phylum, t_phy), y = tot_p, fill = cond_p)) +
+plot_depth_sgbs_p <- mags_depth_sgbs_p[1:60, ] %>%
+  ggplot(aes(x = reorder(phylum, t_phy), y = tot_p, fill = cond_p)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#DD7E8B", "#459682")) +
+  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#dd7e8b", "#459682")) +
   scale_y_continuous(limits = c(0, 100)) +
   labs(x = "", y = "% of species") +
+  coord_flip() +
   theme_classic() +
   theme(legend.position = "none",
         axis.text.y = element_blank(),
         axis.line.y = element_blank(),
-        axis.ticks.y = element_blank()) +
-  coord_flip()
-#ggsave("plot_md_SGBs_phylum_p.pdf", plot_depth_sgbs_p, height = 7, width = 5)
+        axis.ticks.y = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
 
-plot_depth_sgbs_both <- (plot_depth_sgbs | plot_depth_sgbs_p) +
-  plot_layout(nrow = 1, ncol = 2, widths = c(0.55, 0.5))
-ggsave("plot_md_SGBs_phylum.pdf", plot_depth_sgbs_both, height = 7, width = 7)
+#merge
+plot_depth_sgbs_both <- wrap_plots(plot_depth_sgbs, plot_depth_sgbs_p,
+                                   nrow = 1, ncol = 2, widths = c(0.55, 0.5))
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_SGBs_phylum.pdf", plot_depth_sgbs_both, height = 7, width = 7)
 
 # And unknown/known SGBs for biomining?
 mags_depth_sgbs_biom <- mags_metadata_bac %>%
@@ -274,16 +281,20 @@ mags_depth_sgbs_biom <- mags_metadata_bac %>%
   dplyr::arrange(desc(t_phy)) %>%
   pivot_longer(cols = c(n_spe, diff_k), names_to = "cond", values_to = "tot")
 
-plot_depth_sgbs_biom <- ggplot(mags_depth_sgbs_biom,
-                               aes(x = reorder(phylum, tot), y = tot, fill = cond)) +
+plot_depth_sgbs_biom <- mags_depth_sgbs_biom %>%
+  ggplot(aes(x = reorder(phylum, tot), y = tot, fill = cond)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#DD7E8B", "#459682")) +
+  scale_fill_manual(name = "", labels = c("kSGB", "uSGB"), values = c("#dd7e8b", "#459682")) +
   scale_y_continuous(limits = c(0, 25)) +
   labs(x = "Phylum", y = "Biomining species") +
+  coord_flip() +
   theme_classic() +
-  theme(legend.position = c(0.75, 0.2), strip.placement = "outside") +
-  coord_flip()
-ggsave("plot_md_SGBs_phylum_biom.pdf", plot_depth_sgbs_biom, height = 5, width = 4)
+  theme(aspect.ratio = 0.875,
+        legend.position = c(0.75, 0.3),
+        strip.placement = "outside",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_SGBs_phylum_biom.pdf", plot_depth_sgbs_biom, height = 4, width = 6)
 
 # What is the distribution of uSGBs by ecosystem?
 mags_depth_usgbs_eco <- mags_metadata_bac %>%
@@ -292,8 +303,8 @@ mags_depth_usgbs_eco <- mags_metadata_bac %>%
   dplyr::summarise(num = table(ecosystem)) %>%
   dplyr::mutate(phylum = replace(phylum, num < 5, "Other")) #group lows as "other" -> summarise?
 
-plot_depth_usgbs <- ggplot(mags_depth_usgbs_eco,
-                           aes(x = num, y = reorder(phylum, num), fill = ecosystem)) +
+plot_depth_usgbs <- mags_depth_usgbs_eco %>%
+  ggplot(aes(x = num, y = reorder(phylum, num), fill = ecosystem)) +
   geom_col() +
   #geom_text(aes(label = num), vjust = 0.5, hjust = -0.5, size = 2.5) +
   labs(x = "Number of uSGBs", y = "Phylum") +
@@ -303,9 +314,12 @@ plot_depth_usgbs <- ggplot(mags_depth_usgbs_eco,
   theme(legend.position = "none",
         strip.placement = "outside",
         strip.background = element_blank(),
-        panel.border = element_blank()) +
+        panel.border = element_blank(),
+        axis.text = element_text(size = 14),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 10)) +
   facet_grid(.~ecosystem, scales = "free")
-ggsave("plot_md_uSGBs_eco.pdf", plot_depth_usgbs, height = 8, width = 12)
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_uSGBs_eco.pdf", plot_depth_usgbs, height = 9, width = 14)
 
 # What about the annotated bins at genus level (kGGBs) from biomining?
 mags_depth_kggbs_biom <- mags_metadata_bac %>%
@@ -327,15 +341,17 @@ mags_depth_kggbs_biom <- mags_depth_kggbs_biom %>%
   dplyr::mutate(norm = sum / tot_gen * 100) %>%
   distinct(genus, ecosystem, .keep_all = TRUE) #reduce to uniques (plot scale!)
 
-plot_depth_kggbs_biom <- ggplot(mags_depth_kggbs_biom,
-                                aes(y = reorder(genus, norm), x = norm, fill = ecosystem)) +
+plot_depth_kggbs_biom <- mags_depth_kggbs_biom %>%
+  ggplot(aes(y = reorder(genus, norm), x = norm, fill = ecosystem)) +
   geom_col(position = position_stack(reverse = TRUE)) +
-  scale_x_continuous(limits = c(0, 101), n.breaks = 5) + #check!
+  scale_x_continuous(limits = c(0, 101), n.breaks = 5) +
   scale_fill_manual(values = mags_colors_eco) +
   labs(x = "% kGGBs", y = "Known genus from biomining") +
   theme_classic() +
-  theme(legend.title = element_blank())
-ggsave("plot_md_kGGBs_biom.pdf", plot_depth_kggbs_biom, height = 7, width = 6)
+  theme(legend.title = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_kGGBs_biom.pdf", plot_depth_kggbs_biom, height = 7, width = 6)
 
 ### --EXPLORE OTHER TAXA-- ###
 ##inspect unannotated family-level bins (uFGBs)? #1166
@@ -392,7 +408,7 @@ ggsave("plot_md_kGGBs_biom.pdf", plot_depth_kggbs_biom, height = 7, width = 6)
 
 ```{r magbiomqc}
 # Read QC file from CheckM
-mags_qc <- read.csv("mags-all/2-statistics/checkm_parsed_bins.tsv", sep = "\t")
+mags_qc <- read.csv("article_profiling/2-statistics/checkm_parsed_bins.tsv", sep = "\t")
 
 # Select S15 sample
 mags_qc <- mags_qc %>% filter(grepl("Refined-S15", bin))
@@ -418,20 +434,25 @@ mags_qcs <- rbind(mags_qc_hq, mags_qc_mq, mags_qc_lq)
 rm(mags_qc_hq, mags_qc_mq, mags_qc_lq) #clean memory
 
 # Plot
-plot_mags_qc <- ggplot(mags_qcs, aes(x = mags, y = fct_reorder(label, mags), fill = label)) +
+plot_mags_qc <- mags_qcs %>%
+  ggplot(aes(x = mags, y = fct_reorder(label, mags), fill = label)) +
   geom_col(position = "dodge2") +
-  scale_fill_manual(values = c("#DB7971", "#5CA650", "#859AC7")) +
+  #geom_text(aes(label = mags), vjust = 0.5, hjust = -0.25, size = 3) +
+  scale_fill_manual(values = c("#db7971", "#5ca650", "#859ac7")) +
   labs(x = "Number of MAGs", y = "") +
   theme_classic() +
-  theme(legend.position = "none")
-ggsave("mags-all/2-statistics/plots/plot_biom_MAGs_QC.pdf", plot_mags_qc, height = 3, width = 5)
+  theme(aspect.ratio = 0.875,
+        axis.text = element_text(size = 12),
+        axis.title.x = element_text(size = 14),
+        legend.position = "none")
+ggsave("article_profiling/2-statistics/plots/plot_biom_MAGs_QC.pdf", plot_mags_qc, height = 4, width = 6)
 ```
 
 ### Phylogenetic tree
 
 ```{r magbiomtree}
 # Load GTDB taxonomy
-gtdb_taxonomy <- read.csv("1-taxonomy/gtdbtk_classification.tsv", sep = "\t", stringsAsFactors = FALSE)
+gtdb_taxonomy <- read.csv("article_profiling/1-taxonomy/gtdbtk_classification.tsv", sep = "\t", stringsAsFactors = FALSE)
 
 # Subset taxonomy to selected S15 sample and remove underscores
 gtdb_taxonomy <- gtdb_taxonomy %>%
@@ -439,25 +460,30 @@ gtdb_taxonomy <- gtdb_taxonomy %>%
   dplyr::select(-c("taxonomy")) %>%
   mutate_all(function(x) gsub("d__|p__|c__|o__|f__|g__|s__", "", x))
 
-# Read full tree (S15)
-tree <- ape::read.tree("1-taxonomy/trees-gtdbtk/gtdbtk.DASTool-S15.tree")
-
-# Subset to biomining placements
+# Read tree (S15 sample), subset it to biomining placements and save to file
+tree <- ape::read.tree("article_profiling/1-taxonomy/raw/gtdbtk-trees/gtdbtk.DASTool-S15.tree")
 tree_s15 <- keep.tip(tree, as.character(gtdb_taxonomy$genome))
 tree_s15 #44 tips
-
-# Export tree to file
-if (file.exists("1-taxonomy/trees-subset/gtdbtk.DASTool-S15.tree") == FALSE) {
-  ape::write.tree(tree_s15, "1-taxonomy/trees-subset/gtdbtk.DASTool-S15.tree")
+if (file.exists("article_profiling/1-taxonomy/trees-subset/gtdbtk.DASTool-S15.tree") == FALSE) {
+  ape::write.tree(tree_s15, "article_profiling/1-taxonomy/trees-subset/gtdbtk.DASTool-S15.tree")
 }
 rm(tree) #clean memory
 
-# Rename column {genome -> label} (to match with tree) from GTDB data
+# Rename column from GTDB data to match with the tree
 colnames(gtdb_taxonomy)[1] <- "label"
 
 # Convert subset tree to dataframe and join some taxa
 tree_s15_df <- tidytree::as_tibble(tree_s15)
-tree_s15_df <- treeio::full_join(tree_s15_df, gtdb_taxonomy[c("label", "phylum", "family", "genus", "species")], by = "label")
+tree_s15_df <- treeio::full_join(tree_s15_df, gtdb_taxonomy[c("label", "phylum", "class")], by = "label")
+
+# Summarise phyla
+tree_s15_sum_df <- tree_s15_df %>%
+  filter(!is.na(phylum)) %>%
+  dplyr::group_by(phylum) %>%
+  summarise(n = n()) %>%
+  dplyr::mutate(phylum_n = paste0(phylum, " (", n, ")"))
+tree_s15_df <- left_join(tree_s15_df, tree_s15_sum_df, by = c("phylum"))
+rm(tree_s15_sum_df) #clean
 
 # Back tree to phylogenetic object
 tree_s15_md <- tidytree::as.treedata(tree_s15_df)
@@ -466,17 +492,16 @@ tree_s15_md <- tidytree::as.treedata(tree_s15_df)
 tree_colors <- colorRampPalette(brewer.pal(12, "Paired"))(length(unique(gtdb_taxonomy$phylum)))
 
 # Plot circular tree
-plot_tree_s15 <- ggtree(tree_s15_md, layout = "circular", size = 0.2)
-
+#plot_tree_s15 <- ggtree(tree_s15_md, layout = "circular", size = 0.2)
 # Plot tree adding phylum
-plot_tree_s15_phyla <- plot_tree_s15 +
-  geom_tippoint(aes(color = phylum), na.rm = TRUE, size = 1) +
-  geom_tiplab(aes(label = phylum, color = phylum), size = 1.75, hjust = -0.1) +
-  scale_colour_discrete(breaks = c("c", "d"), na.value = NA) +
-  scale_colour_manual(values = tree_colors, na.translate = FALSE, guide = "none") +
+#plot_tree_s15_phyla <- plot_tree_s15 +
+#  geom_tippoint(aes(color = phylum), na.rm = TRUE, size = 1) +
+#  geom_tiplab(aes(label = phylum, color = phylum), size = 1.75, hjust = -0.1) +
+#  scale_colour_discrete(breaks = c("c", "d"), na.value = NA) +
+#  scale_colour_manual(values = tree_colors, na.translate = FALSE, guide = "none") +
   #guides(color = guide_legend(title = "Phyla", ncol = 1, order = 1)) +
-  theme()
-ggsave("plot_biom_MAGs_tree_phyla.pdf", plot_tree_s15_phyla, height = 5, width = 7)
+#  theme()
+#ggsave("plot_biom_MAGs_tree_phyla.pdf", plot_tree_s15_phyla, height = 5, width = 7)
 
 # Process QC attributes to match tree tips order
 tree_tips <- tree_s15$tip.label
@@ -486,8 +511,6 @@ tree_st  <- vector()
 tree_gs  <- vector()
 tree_gc  <- vector()
 tree_pg  <- vector()
-
-# Match datasets
 for (i in 1:nrow(tree_s15_df)) {
   for (j in 1:nrow(mags_qc)) {
     if (tree_s15_df$label[i] == mags_qc$bin[j]) {
@@ -505,94 +528,84 @@ for (i in 1:nrow(tree_s15_df)) {
 tree_qc_df <- tibble(Bin = tree_tips, Completeness = tree_com,
                      Contamination = tree_con, Strain_Het = tree_st,
                      Genome_Size = tree_gs, GC = tree_gc, Pred_Genes = tree_pg)
-rm(tree_tips, tree_com, tree_con, tree_st, tree_gs, tree_gc, tree_pg) #clean memory
+rm(tree_tips, tree_com, tree_con, tree_st, tree_gs, tree_gc, tree_pg, i, j) #clean memory
 
 # Plot tree adding QC as multiple layers
-plot_tree_s15_md <- plot_tree_s15_phyla +
+plot_tree_s15_md <- ggtree(tree_s15_md, layout = "circular", size = 0.1) +
+  geom_tippoint(aes(color = phylum), na.rm = TRUE, size = 1) +
+  geom_tiplab(aes(label = phylum, color = phylum), size = 2, hjust = -0.2) +
+  geom_treescale(x = -0.15, y = 0, offset = 0.2, fontsize = 1.4, linesize = 0.1, width = 0.1) +
+  scale_colour_manual(values = tree_colors, guide = "none") +
+  #add QC as layers
   new_scale_fill() + new_scale_color() +
   geom_fruit(data = tree_qc_df, geom = geom_bar,
              mapping = aes(y = Bin, x = Completeness, fill = Completeness),
-             orientation = "y", stat = "identity", position = "auto", width = 0.85,
-             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.2, offset = 0.6,
-             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 3,
-                                title = "Complet.", title.size = 1.6,
-                                title.height = 0.035, title.angle = 30)) +
-  scale_fill_gradient(low = "#1F4060", high = "#4CA8F6", guide = "none") +
-                      #guide = guide_legend(keyheight = 0.4, keywidth = 0.7,
-                      #                     reverse = TRUE, order = 1)) +
-  ###Error in scale$guide == "none"
+             orientation = "y", stat = "identity", position = "auto",
+             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.3, offset = 1,
+             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 3)) +
+  scale_fill_gradient(name = "Completeness (%)", low = "#1f4060", high = "#4497dd",
+                      guide = guide_legend(keyheight = 0.3, keywidth = 0.6, reverse = TRUE, order = 1)) +
   new_scale_fill() + new_scale_color() +
   geom_fruit(data = tree_qc_df, geom = geom_bar,
              mapping = aes(y = Bin, x = Contamination, fill = Contamination),
-             orientation = "y", stat = "identity", position = "auto", width = 0.85,
-             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.2, offset = 0.1,
-             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 1,
-                                title = "Contam.", title.size = 1.6,
-                                title.height = 0.035, title.angle = 30)) +
-  scale_fill_gradient(low = "#6A60A8", high = "#C4C2DE", guide = "none") +
+             orientation = "y", stat = "identity", position = "auto",
+             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.3, offset = 0.15,
+             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 3)) +
+  scale_fill_gradient(name = "Contamination (%)", low = "#6a60a8", high = "#c4c2de",
+                      guide = guide_legend(keyheight = 0.3, keywidth = 0.6, reverse = TRUE, order = 2)) +
   new_scale_fill() + new_scale_color() +
   geom_fruit(data = tree_qc_df, geom = geom_bar,
              mapping = aes(y = Bin, x = Strain_Het, fill = Strain_Het),
-             orientation = "y", stat = "identity", position = "auto", width = 0.85,
-             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.2, offset = 0.1,
-             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 3,
-                                title = "Strain Het.", title.size = 1.6,
-                                title.height = 0.035, title.angle = 30)) +
-  scale_fill_gradient(low = "#C9543F", high = "#E9BAB2",
-                      name = "Strain Heterogeneity", guide = "none") +
+             orientation = "y", stat = "identity", position = "auto",
+             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.3, offset = 0.15,
+             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 3)) +
+  scale_fill_gradient(name = "Strain Heterogeneity", low = "#c9543f", high = "#e9bab2",
+                      guide = guide_legend(keyheight = 0.3, keywidth = 0.6, reverse = TRUE, order = 3)) +
   new_scale_fill() + new_scale_color() +
   geom_fruit(data = tree_qc_df, geom = geom_bar,
              mapping = aes(y = Bin, x = Pred_Genes, fill = Pred_Genes),
-             orientation = "y", stat = "identity", position = "auto", width = 0.85,
-             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.2, offset = 0.1,
-             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 1,
-                                title = "Pred. genes", title.size = 1.6,
-                                title.height = 0.035, title.angle = 30)) +
-  scale_fill_gradient(low = "#279854", high = "#A9DEDE",
-                      name = "Predicted Genes", guide = "none") +
-  theme()
-  #theme(legend.title = element_text(size = 8),
-  #      legend.text = element_text(size = 7),
-  #      legend.key.height = unit(3.5, units = "mm"),
-  #      legend.key.width = unit(2, units = "mm"))
-ggsave("plot_biom_MAGs_tree_md.pdf", plot_tree_s15_md, height = 7, width = 7) #x9
+             orientation = "y", stat = "identity", position = "auto",
+             grid.params = list(linetype = 1, size = 0.1), pwidth = 0.3, offset = 0.15,
+             axis.params = list(axis = "x", text.size = 1.8, vjust = 1, nbreak = 2)) +
+  scale_fill_gradient(name = "Predicted Genes", low = "#279854", high = "#a9dede",
+                      guide = guide_legend(keyheight = 0.3, keywidth = 0.6, reverse = TRUE, order = 4)) +
+  theme(legend.title = element_text(size = 10),
+        legend.text = element_text(size = 9),
+        legend.key.height = unit(4, units = "mm"),
+        legend.key.width = unit(3, units = "mm"))
+ggsave("article_profiling/1-taxonomy/plots/plot_biom_MAGs_tree_md.pdf", plot_tree_s15_md, height = 7, width = 9)
 ```
 
 ## Figure 1 & supplementary 1
 
 ```{r fig1}
 # Merge plots using patchwork
-fig_1a <- { plot_tree_s15_md | plot_depth_spec_eco +
-  plot_layout(ncol = 2, widths = c(1, 0.5))
-  } + plot_annotation(tag_levels = list(c("a", "e"))) &
-  theme(plot.tag =  element_text(face = "bold"))
-ggsave("fig_1a.pdf", fig_1a, height = 7, width = 14)
+fig_1a <- wrap_plots(plot_tree_s15_md, plot_mags_qc, plot_depth_sgbs_biom,
+                     design = "\nAAAB\nAAAC", heights = c(1, 0.85))
+#ggsave("article_profiling/fig_1a.pdf", fig_1a, height = 8, width = 15)
+fig_1b <- wrap_plots(plot_depth_sgbs_both, plot_depth_spec_eco, plot_depth_kggbs_biom,
+                     design = "\nAAABBCC\n")
+#ggsave("article_profiling/fig_1b.pdf", fig_1b, height = 8, width = 15)
 
-fig_1b <- { plot_mags_qc / plot_depth_sgbs_biom |
-    plot_depth_sgbs_both | plot_depth_kggbs_biom
-  } + plot_layout(ncol = 3, widths = c(0.5, 2, 0.75)) +
-  plot_annotation(tag_levels = list(c("b", "c", "d", "", "f"))) &
-  theme(plot.tag =  element_text(face = "bold"))
-ggsave("fig_1b.pdf", fig_1b, height = 7, width = 14)
-
-fig_1 <- (fig_1a / fig_1b) +
-  plot_annotation(tag_levels = list(c("a", "e", "b", "c", "d", "", "f"))) &
-  theme(plot.tag =  element_text(face = "bold"))
-ggsave("fig_1.pdf", fig_1, height = 14, width = 14)
-#ggsave("fig_1.png", fig_1, height = 14, width = 14)
-rm(fig_1a, fig_1b) #clean memory
+fig_1 <- wrap_plots(fig_1a, fig_1b, nrow = 2, heights = c(1, 0.85)) +
+  plot_annotation(tag_levels = list(c("a", "b", "c", "d", "", "e", "f"))) &
+  theme(plot.tag = element_text(face = "bold"))
+ggsave("article_profiling/fig_1.pdf", fig_1, height = 16, width = 16)
+#ggsave("article_profiling/fig_1.png", fig_1, height = 16, width = 16)
+rm(fig_1a, fig_1b) #clean
 
 #sup 1
-fig_s1 <- { plot_depth_top_phyla |
+fig_s1 <-  { plot_depth_top_phyla |
     (plot_depth_usgbs / plot_depth_spec + plot_layout(heights = c(0.85, 0.15))) } +
   plot_layout(ncol = 2, widths = c(0.25, 1)) +
   plot_annotation(tag_levels = list(c("a", "b", "c"))) &
-  theme(plot.tag =  element_text(face = "bold"))
+  theme(plot.tag = element_text(size = 20, face = "bold"))
 fig_s1[[2]][[1]] <- fig_s1[[2]][[1]] + theme(axis.title.y = element_text(vjust = 0))
-#fig_s1[[2]][[2]] <- fig_s1[[2]][[2]] + theme(axis.text.y = element_text(vjust = 0))
-#fig_s1 <- wrap_plots(plot_depth_usgbs, plot_depth_spec, nrow = 2, ncol = 1, heights = c(0.85, 0.15))
-ggsave("mags-all/fig_s1.pdf", fig_s1, height = 9, width = 18)
-#ggsave("mags-all/fig_s1.png", fig_s1, height = 9, width = 18)
+fig_s1[[2]][[2]] <- fig_s1[[2]][[2]] + theme(axis.line.y.left = element_blank(),
+                                             axis.ticks.y.left = element_blank())#,
+                                             #axis.text.y = element_text(hjust = 2.2))
+ggsave("article_profiling/fig_s1.pdf", fig_s1, height = 13, width = 22)
+#ggsave("article_profiling/fig_s1.png", fig_s1, height = 13, width = 22)
 ```
 
 ## Section 2: Functional Annotation
@@ -698,8 +711,8 @@ for (i in 1:nrow(kegg_paths)) {
 	kegg_ko_paths <- append(kegg_ko_paths, fx_setKOpathways(kegg_paths$Definition[i]))
 	kegg_ko_metab <- append(kegg_ko_metab, fx_setKOmetabtypes(kegg_paths$Definition[i]))
 }
-kegg_paths['Pathway'] <- kegg_ko_paths
-kegg_paths['Metabolism'] <- kegg_ko_metab
+kegg_paths["Pathway"] <- kegg_ko_paths
+kegg_paths["Metabolism"] <- kegg_ko_metab
 rm(kegg_ko_paths, kegg_ko_metab) #clean memory
 
 # Keep only selected pathways from the annotation matrix
@@ -716,8 +729,8 @@ for (i in 1:nrow(kegg_mags)) { #this loop takes a few secs to run!
 	kegg_mags_eco <- append(kegg_mags_eco, fx_getMAGecosystem(kegg_mags$mag[i]))
 	kegg_mags_length <- append(kegg_mags_length, fx_getMAGlength(kegg_mags$mag[i]))
 }
-kegg_mags['ecosystem'] <- kegg_mags_eco
-kegg_mags['length'] <- kegg_mags_length
+kegg_mags["ecosystem"] <- kegg_mags_eco
+kegg_mags["length"] <- kegg_mags_length
 rm(kegg_mags_eco, kegg_mags_length) #clean memory
 
 # Explore ecosystems..
@@ -816,7 +829,7 @@ kegg_pca_def <- vector()
 for (i in 1:nrow(kegg_pca_kos)) {
 	kegg_pca_def <- append(kegg_pca_def, fx_setKOpathways(kegg_pca_kos$Definition[i]))
 }
-kegg_pca_kos['Pathway'] <- kegg_pca_def
+kegg_pca_kos["Pathway"] <- kegg_pca_def
 
 # Normalize data to z-score
 kegg_pca_dat <- apply(kegg_pca_dat, 1, norm_pca <- function(x){return (x - mean(x)) / sd(x)}) %>% t()
@@ -908,7 +921,7 @@ kegg_pca_obj_pairs <- pairsplot(kegg_pca_obj, colby = "ecosystem",
 ggsave("plot_annot_pcatools_pairsplot.pdf", kegg_pca_obj_pairs, height = 7, width = 10)
 ```
 
-### Bubble and box plots
+### Bubble and boxplots
 
 ```{r bubble}
 # Get unique ecosystems
@@ -919,7 +932,7 @@ kegg_bubble <- row.names(kegg_filt) %>%
   as.data.frame() %>%
   slice(rep(1:n(), each = length(kegg_bubble_eco)))
 colnames(kegg_bubble) <- c("KO")
-kegg_bubble['ecosystem'] <- c("")
+kegg_bubble["ecosystem"] <- c("")
 kegg_bubble$ecosystem <- rep(kegg_bubble_eco, nrow(kegg_filt))
 
 # Plot design/overview:
@@ -1053,36 +1066,38 @@ anova_sort_s <- left_join(anova_sort_s, mags_colors, by = c("ecosystem"))
 anova_boxplot_cu <- ggboxplot(kegg_bubble_cu, x = "ecosystem", y = "count_norm",
                            color = "ecosystem", palette = anova_sort_cu$colors,
                            order = anova_sort_cu$ecosystem, add = "jitter", legend = "none") +
-  geom_hline(yintercept = mean(kegg_bubble_cu$count_norm), linetype = 2, linewidth = 0.2) +
-  labs(x = "Ecosystem", y = "KOs/Mb for copper") +
-  rotate_x_text(angle = 45) + #ylim(c(0, 0.25)) +
+  geom_hline(yintercept = mean(kegg_bubble_cu$count_norm), linetype = 2, linewidth = 0.5) +
+  labs(x = "Ecosystem", y = "Copper pathway (KOs/Mb)") +
+  rotate_x_text(angle = 45) + ylim(c(0, 0.3)) +
   #stat_summary(fun = mean, geom = "point", shape = 18, size = 2.5, color = "#FC4E07") +
-  stat_compare_means(method = "anova", label.y = 0.25) + #add global annova p-value
-  stat_compare_means(label = "p.signif", method = "t.test",
-                     ref.group = ".all.", hide.ns = TRUE)
-ggsave("plot_annot_boxplot_copper.pdf", anova_boxplot_cu, height = 7, width = 7)
+  stat_compare_means(method = "anova", label.y = 0.3, size = 5) + #add global annova p-value
+  stat_compare_means(label = "p.signif", method = "t.test", ref.group = ".all.", hide.ns = TRUE) +
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16))
+ggsave("article_profiling/4-mags-smag/2-plots-annotation/bubble/plot_annot_boxplot_copper.pdf", anova_boxplot_cu, height = 7, width = 7)
 
 anova_boxplot_fe <- ggboxplot(kegg_bubble_fe, x = "ecosystem", y = "count_norm",
                            color = "ecosystem", palette = anova_sort_fe$colors,
                            order = anova_sort_fe$ecosystem, add = "jitter", legend = "none") +
-  geom_hline(yintercept = mean(kegg_bubble_fe$count_norm), linetype = 2, linewidth = 0.2) +
-  labs(x = "Ecosystem", y = "KOs/Mb for iron") +
-  rotate_x_text(angle = 45) +
-  stat_compare_means(method = "anova", label.y = 0.4) + #add global annova p-value
+  geom_hline(yintercept = mean(kegg_bubble_fe$count_norm), linetype = 2, linewidth = 0.5) +
+  labs(x = "Ecosystem", y = "Iron pathway (KOs/Mb)") +
+  rotate_x_text(angle = 45) + ylim(c(0, 0.4)) +
+  stat_compare_means(method = "anova", label.y = 0.4, size = 5) + #add global annova p-value
   stat_compare_means(label = "p.signif", method = "t.test",
-                     ref.group = ".all.", hide.ns = TRUE, label.y = 0.35)
-ggsave("plot_annot_boxplot_iron.pdf", anova_boxplot_fe, height = 7, width = 7)
+                     ref.group = ".all.", hide.ns = TRUE, label.y = 0.35) +
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16))
+ggsave("article_profiling/4-mags-smag/2-plots-annotation/bubble/plot_annot_boxplot_iron.pdf", anova_boxplot_fe, height = 7, width = 7)
 
 anova_boxplot_s <- ggboxplot(kegg_bubble_s, x = "ecosystem", y = "count_norm",
                              color = "ecosystem", palette = anova_sort_s$colors,
                              order = anova_sort_s$ecosystem, add = "jitter", legend = "none") +
-  geom_hline(yintercept = mean(kegg_bubble_s$count_norm), linetype = 2, linewidth = 0.2) +
-  labs(x = "Ecosystem", y = "KOs/Mb for sulfur") +
-  rotate_x_text(angle = 45) +
-  stat_compare_means(method = "anova", label.y = 0.7) + #add global annova p-value
-  stat_compare_means(label = "p.signif", method = "t.test",
-                     ref.group = ".all.", hide.ns = TRUE)
-ggsave("plot_annot_boxplot_sulfur.pdf", anova_boxplot_s, height = 7, width = 7)
+  geom_hline(yintercept = mean(kegg_bubble_s$count_norm), linetype = 2, linewidth = 0.5) +
+  labs(x = "Ecosystem", y = "Sulfur pathway (KOs/Mb)") +
+  rotate_x_text(angle = 45) + ylim(c(0, 0.8)) +
+  stat_compare_means(method = "anova", label.y = 0.8, size = 5) + #add global annova p-value
+  stat_compare_means(label = "p.signif", method = "t.test", ref.group = ".all.",
+                     hide.ns = TRUE, label.y = 0.75, size = 6) +
+  theme(axis.text = element_text(size = 14), axis.title = element_text(size = 16))
+ggsave("article_profiling/4-mags-smag/2-plots-annotation/bubble/plot_annot_boxplot_sulfur.pdf", anova_boxplot_s, height = 7, width = 7)
 
 # Bubble plot with key KOs from biomining
 #multicopper, copper resistance (B,C,D), menaquinol
@@ -1099,15 +1114,18 @@ kegg_bubbles_plot <- kegg_bubble %>%
   left_join(kegg_paths, by = c("KO")) %>% #add definitions, then plot
   ggplot(aes(x = reorder(ecosystem, -count_norm),
              y = Definition, size = count_norm, color = ecosystem)) +
-  geom_point(alpha = 0.7) +
+  geom_point(alpha = 0.5) +
+  scale_size(range = c(0, 10)) +
+  scale_y_discrete(position = "right") +
   scale_color_manual(values = mags_colors_eco, guide = "none") +
-  labs(title = "", x = "Ecosystem", y = "Highlighted KO definitions") +
+  labs(title = "", x = "Ecosystem", y = "") +
   guides(size = guide_legend(title = "Norm. counts")) +
   theme_classic() +
-  theme(legend.title = element_text(size = 9), legend.position = "right",
-        plot.subtitle = element_text(size = 8, hjust = 0.5, face = "italic"),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-ggsave("plot_annot_bubbles.pdf", kegg_bubbles_plot, height = 7, width = 8.5)
+  theme(legend.title = element_text(size = 12), legend.position = "top",
+        axis.text.x = element_text(size = 14, angle = 90, vjust = 1, hjust = 1),
+        axis.text.y = element_text(size = 14), axis.title.x = element_text(size = 16),
+        axis.line.y.right = element_blank(), axis.ticks.y.right = element_blank())
+ggsave("article_profiling/4-mags-smag/2-plots-annotation/bubble/plot_annot_bubbles.pdf", kegg_bubbles_plot, height = 7, width = 12)
 
 # ANOVA test:
 # H0 the means are equal for ecosystems (if p < 0.05, we take Ha)
@@ -1248,50 +1266,54 @@ ggsave("plot_annot_bubble_sulfur.pdf", kegg_bubble_plot_s, height = 8, width = 9
 
 ```{r fig2}
 # Merge plots using patchwork
-fig_2 <- { { anova_boxplot_cu / anova_boxplot_fe +
-    plot_layout(ncol = 1, widths = c(0.75)) } | anova_boxplot_s / kegg_bubbles_plot } +
-  plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
-  theme(plot.tag =  element_text(face = "bold"))
-#adjust y-label margin for sulfur plot
-fig_2[[2]][[1]] <- fig_2[[2]][[1]] + theme(axis.title.y = element_text(vjust = -127))
-ggsave("mags-all/fig_2.pdf", fig_2, height = 14, width = 18)
-#ggsave("mags-all/fig_2.png", fig_2, height = 14, width = 18) #vjust=120
+fig_2 <- wrap_plots(anova_boxplot_cu, anova_boxplot_fe, anova_boxplot_s, design = "AABBCC") +
+  plot_annotation(tag_levels = list(c("a", "b", "c"))) &
+  theme(plot.tag = element_text(size = 22, face = "bold"))
+ggsave("article_profiling/fig_2.pdf", fig_2, height = 7, width = 19)
+ggsave("article_profiling/fig_2.png", fig_2, height = 7, width = 19)
+
+#sup 2
+fig_s2 <- wrap_plots(kegg_bubbles_plot, design = "AAA") +
+  plot_annotation(tag_levels = list(c("a", "b", "c"))) &
+  theme(plot.tag = element_text(size = 20, face = "bold"))
+ggsave("article_profiling/fig_s2a.pdf", fig_s2, height = 7, width = 12)
+#ggsave("article_profiling/fig_s2a.png", fig_s2, height = 7, width = 12)
 ```
 
-## Section 3: SNP Variant Calling
+## Section 3: Evolutionary analysis
 
-### dN/dS analysis
+### dN/dS
 
 ```{r snps}
 # Buildref for 1 bin (testing for bacteria species..)
 #https://github.com/im3sanger/dndscv/issues/62
-#buildref(cdsfile = "mags-all/5-SNPs/dndscv/buildref/cds_node_25854.txt",
-#         genomefile = "mags-all/5-SNPs/dndscv/buildref/node_25854.fa",
-#         outfile = "mags-all/5-SNPs/dndscv/buildref/testref.rda")
-#load("mags-all/5-SNPs/dndscv/buildref/testref.rda")
+#buildref(cdsfile = "article_profiling/5-SNPs/dndscv/buildref/cds_node_25854.txt",
+#         genomefile = "article_profiling/5-SNPs/dndscv/buildref/node_25854.fa",
+#         outfile = "article_profiling/5-SNPs/dndscv/buildref/testref.rda")
+#load("article_profiling/5-SNPs/dndscv/buildref/testref.rda")
 
 # Buildref for all bins (very slow! ~2 hrs in building object)
-#buildref(cdsfile = "mags-all/5-SNPs/dndscv/buildref/cds_table.txt",
-#         genomefile = "mags-all/5-SNPs/dndscv/buildref/S15_bins.fa",
-#         outfile = "mags-all/5-SNPs/dndscv/buildref/S15_refcds.rda")
+#buildref(cdsfile = "article_profiling/5-SNPs/dndscv/buildref/cds_table.txt",
+#         genomefile = "article_profiling/5-SNPs/dndscv/buildref/S15_bins.fa",
+#         outfile = "article_profiling/5-SNPs/dndscv/buildref/S15_refcds.rda")
 
 # Inspect refdb
-#load("mags-all/5-SNPs/dndscv/buildref/S15_refcds.rda")
+#load("article_profiling/5-SNPs/dndscv/buildref/S15_refcds.rda")
 #print(RefCDS[[1]])
 #rm(gr_genes, RefCDS) #clean memory
 
 # Get annotations (parsed from the VCF generated with SnpEff)
 #sampleID chr pos ref mut
-snp_mutations <- read.csv("mags-all/5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+snp_mutations <- read.csv("article_profiling/5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 # Run dndscv (runtime ~8 min, high memory usage) and save object
-#snp_dndsout <- dndscv(snp_mutations, refdb = "mags-all/5-SNPs/dndscv/buildref/S15_refcds.rda",
+#snp_dndsout <- dndscv(snp_mutations, refdb = "article_profiling/5-SNPs/dndscv/buildref/S15_refcds.rda",
 #                      max_muts_per_gene_per_sample = Inf, max_coding_muts_per_sample = Inf,
 #                      cv = NULL, outmats = TRUE)
-#save(snp_dndsout, file = "mags-all/5-SNPs/dndscv/run/S15_dndsout.rda")
-#save(substmodel, file = "mags-all/5-SNPs/dndscv/run/S15_substmodel.rda")
-#load("mags-all/5-SNPs/dndscv/run/S15_dndsout.rda")
-#load("mags-all/5-SNPs/dndscv/run/S15_substmodel.rda")
+#save(snp_dndsout, file = "article_profiling/5-SNPs/dndscv/run/S15_dndsout.rda")
+#save(substmodel, file = "article_profiling/5-SNPs/dndscv/run/S15_substmodel.rda")
+#load("article_profiling/5-SNPs/dndscv/run/S15_dndsout.rda")
+#load("article_profiling/5-SNPs/dndscv/run/S15_substmodel.rda")
 rm(snp_mutations) #clean memory
 
 # Explore output object..
@@ -1329,7 +1351,7 @@ snp_plot_dndsglob <- ggplot(snp_global_dnds, aes(x = genes, y = reorder(label, g
   labs(x = "Number of genes", y = "") +
   theme_classic() +
   theme(legend.position = "none")
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_global.pdf", snp_plot_dndsglob, height = 2, width = 5)
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_global.pdf", snp_plot_dndsglob, height = 2, width = 5)
 
 # Filter genes under PS:
 #https://github.com/im3sanger/dndscv/issues/56
@@ -1340,13 +1362,13 @@ snp_psgenes <- snp_selcv %>%
   dplyr::mutate(dndsr = round((n_mis / n_syn), 1))
 
 # Get CDS annotations (pre-processed from Bakta results)
-snp_refcds <- read.csv("mags-all/5-SNPs/dndscv/buildref/cds_table.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+snp_refcds <- read.csv("article_profiling/5-SNPs/dndscv/buildref/cds_table.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 # Load contig to bin matrix
-snp_bins <- read.csv("mags-all/5-SNPs/dndscv/results/S15_DASTool_contig2bin.tsv", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+snp_bins <- read.csv("article_profiling/5-SNPs/dndscv/results/S15_DASTool_contig2bin.tsv", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 # Load gene names (parsed from genes.gff file)
-snp_genids <- read.csv("mags-all/5-SNPs/dndscv/results/gene_id_name.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+snp_genids <- read.csv("article_profiling/5-SNPs/dndscv/results/gene_id_name.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 ## FUNCTIONS ##
 # Function that returns the contig where a gene was found
@@ -1412,9 +1434,9 @@ for (i in 1:nrow(snp_psgenes)) {
 	snp_contig2bin <- append(snp_contig2bin, fx_dndsContig2Bin(snp_gene2contig[i]))
 	snp_genenames <- append(snp_genenames, fx_dndsGeneName(snp_psgenes$gene_name[i]))
 }
-snp_psgenes['contig'] <- snp_gene2contig
-snp_psgenes['bin'] <- snp_contig2bin
-snp_psgenes['name'] <- snp_genenames
+snp_psgenes["contig"] <- snp_gene2contig
+snp_psgenes["bin"] <- snp_contig2bin
+snp_psgenes["name"] <- snp_genenames
 rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames) #clean memory
 
 # Group PS genes to add taxa & QC
@@ -1429,12 +1451,12 @@ for (i in 1:nrow(snp_dnds)) {
   #print(sprintf("%i -> bin: %s", i, fx_dndsTaxaBin(snp_dnds$bin[i])))
   snp_taxabins <- rbind(snp_taxabins, fx_dndsTaxaBin(snp_dnds$bin[i]))
 }
-snp_dnds['phylum'] <- snp_taxabins$phylum
-snp_dnds['genus'] <- snp_taxabins$genus
-snp_dnds['species'] <- snp_taxabins$species
-snp_dnds['completeness'] <- snp_taxabins$completeness
-snp_dnds['contamination'] <- snp_taxabins$contamination
-snp_dnds['predicted_genes'] <- snp_taxabins$predicted_genes
+snp_dnds["phylum"] <- snp_taxabins$phylum
+snp_dnds["genus"] <- snp_taxabins$genus
+snp_dnds["species"] <- snp_taxabins$species
+snp_dnds["completeness"] <- snp_taxabins$completeness
+snp_dnds["contamination"] <- snp_taxabins$contamination
+snp_dnds["predicted_genes"] <- snp_taxabins$predicted_genes
 rm(snp_taxabins) #clean memory
 
 # Set unknown genus/species (uGGBs and uSGBs)
@@ -1458,81 +1480,93 @@ snp_psgenes_sub <- snp_psgenes %>%
   pivot_longer(cols = c(n_syn, n_mis, n_non), names_to = "mut", values_to = "n_mut")
 
 # Save PS gene names and ids to file
-if (file.exists("mags-all/5-SNPs/dndscv/results/ps_genes.txt") == FALSE) {
-  write.table(snp_psgenes_sub %>% dplyr::select(gene_name) %>% distinct(gene_name), "mags-all/5-SNPs/dndscv/results/ps_genes.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+if (file.exists("article_profiling/5-SNPs/dndscv/results/ps_genes.txt") == FALSE) {
+  write.table(snp_psgenes_sub %>% dplyr::select(gene_name) %>% distinct(gene_name), "article_profiling/5-SNPs/dndscv/results/ps_genes.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
-if (file.exists("mags-all/5-SNPs/dndscv/results/kofam/ps_genes_ids.txt") == FALSE) {
-  write.table(unique(snp_psgenes_sub$name), "mags-all/5-SNPs/dndscv/results/kofam/ps_genes_ids.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+if (file.exists("article_profiling/5-SNPs/dndscv/results/kofam/ps_genes_ids.txt") == FALSE) {
+  write.table(unique(snp_psgenes_sub$name), "article_profiling/5-SNPs/dndscv/results/kofam/ps_genes_ids.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
 
 # Plot global driver genes by MAG/species
-snp_plot_psbins <- ggplot(snp_dnds, aes(x = num, y = reorder(bin, num), fill = bin)) +
-  geom_bar(stat = "identity", fill = "#E31A1C") +
-  geom_text(aes(label = num), vjust = 0.5, hjust = -0.5, size = 2.5) +
+snp_plot_psbins <- snp_dnds %>%
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MaxBin2Refined-", "")) %>% #trim bin names
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MetaBAT2Refined-", "")) %>%
+  ggplot(aes(x = num, y = reorder(bin, num), fill = bin)) +
+  geom_bar(stat = "identity", fill = "#e31a1c") +
+  geom_text(aes(label = num), vjust = 0.5, hjust = -0.25, size = 4) +
   labs(x = "Number of genes under PS", y = "MAG Bin") +
   scale_x_continuous(limits = c(0, 255)) +
   theme_classic() +
-  theme(strip.background = element_blank()) +
+  theme(strip.background = element_blank(), axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18), strip.text.x = element_text(size = 14)) +
   facet_grid(.~species)
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 9, width = 10)
-
-# Add completeness & contamination barplots, then merge
-snp_plot_psbins2 <- ggplot(snp_dnds, aes(x = completeness, y = reorder(bin, num), fill = bin)) +
+#ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 11, width = 12)
+#add completeness & contamination barplots
+snp_plot_psbins2 <- snp_dnds %>%
+  ggplot(aes(x = completeness, y = reorder(bin, num), fill = bin)) +
   geom_col(fill = "#3c4d76") +
-  geom_vline(xintercept = 100, linetype = 1, linewidth = 0.2) +
+  geom_vline(xintercept = 100, linetype = 1, linewidth = 0.4) +
   labs(x = "Completeness", y = "") +
   theme_classic() +
   theme(axis.text.y = element_blank(),
         axis.line.y = element_blank(),
-        axis.ticks.y = element_blank())
-snp_plot_psbins3 <- ggplot(snp_dnds, aes(x = contamination, y = reorder(bin, num), fill = bin)) +
+        axis.ticks.y = element_blank(),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+snp_plot_psbins3 <- snp_dnds %>%
+  ggplot(aes(x = contamination, y = reorder(bin, num), fill = bin)) +
   geom_col(fill = "#763c4d") +
-  geom_vline(xintercept = max(snp_dnds$contamination), linetype = 1, linewidth = 0.2) +
+  geom_vline(xintercept = max(snp_dnds$contamination), linetype = 1, linewidth = 0.4) +
   labs(x = "Contamination", y = "") +
   theme_classic() +
   theme(axis.text.y = element_blank(),
         axis.line.y = element_blank(),
-        axis.ticks.y = element_blank())
-
+        axis.ticks.y = element_blank(),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+#merge
 snp_plot_psbins <- wrap_plots(snp_plot_psbins, snp_plot_psbins2, snp_plot_psbins3,
                               nrow = 1, ncol = 3, widths = c(1, 0.15, 0.15))
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 9, width = 12)
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_psbins.pdf", snp_plot_psbins, height = 11, width = 17)
 rm(snp_plot_psbins2, snp_plot_psbins3) #clean memory
 
 # Lollipop plot of PS genes
-snp_plot_psgenes <- ggplot(snp_psgenes_sub,
-                           aes(x = wmis_cv, y = reorder(name, wmis_cv)), size = wmis_cv) +
+snp_plot_psgenes <- snp_psgenes_sub %>%
+  dplyr::filter(wmis_cv > 1.4) %>% #cutoff
+  ggplot(aes(x = wmis_cv, y = reorder(name, wmis_cv)), size = wmis_cv) +
   geom_segment(aes(x = 0, xend = wmis_cv, y = name), color = "gray") +
-  geom_point(alpha = 0.7, color = "#E31A1C") +
-  geom_text(aes(label = signif, x = -0.15), size = 3, color = "#3c4d76") +
-  geom_text(aes(label = path, x = -0.15), size = 2, color = "#3c4d76") +
-  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.2) +
-  geom_vline(xintercept = max(snp_psgenes_sub$wmis_cv), linetype = 1, linewidth = 0.2) +
-  labs(x = "PS strength", y = "Gene CDS") +
-  theme_classic()
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psgenes.pdf", snp_plot_psgenes, height = 11, width = 7)
+  geom_point(alpha = 0.7, size = 2, color = "#e31a1c") +
+  geom_text(aes(label = signif, x = -0.15), size = 6.5, color = "#3c4d76") +
+  geom_text(aes(label = path, x = -0.15), size = 5.5, color = "#3c4d76") +
+  geom_vline(xintercept = 1, linetype = 2, linewidth = 0.4) +
+  geom_vline(xintercept = max(snp_psgenes_sub$wmis_cv), linetype = 1, linewidth = 0.4) +
+  labs(x = "PS strength", y = "Gene name") +
+  theme_classic() +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+#ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_psgenes.pdf", snp_plot_psgenes, height = 12, width = 7)
 
 # Plot PS genes mutations per type, then merge
-snp_plot_muts <- ggplot(snp_psgenes_sub, aes(x = n_mut, y = reorder(name, wmis_cv), fill = mut)) +
+snp_plot_muts <- snp_psgenes_sub %>%
+  dplyr::filter(wmis_cv > 1.4) %>% #cutoff
+  ggplot(aes(x = n_mut, y = reorder(name, wmis_cv), fill = mut)) +
   geom_col(position = position_stack(reverse = TRUE)) +
   scale_fill_manual(name = "", labels = c("mis", "non", "syn"),
                     values = c("#5db4b2", "#b687b6", "#2374a4")) +
   labs(x = "Number of mutations", y = "") +
   theme_classic() +
-  theme(legend.position = c(0.85, 0.15),
-        strip.placement = "outside",
-        axis.text.y = element_blank(),
-        axis.line.y = element_blank(),
-        axis.ticks.y = element_blank())
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psmuts.pdf", snp_plot_muts, height = 11, width = 7)
-
-snp_plot_psgenes <- (snp_plot_psgenes | snp_plot_muts) +
-  plot_layout(nrow = 1, ncol = 2, widths = c(0.55, 0.5))
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_psgenmuts.pdf", snp_plot_psgenes, height = 11, width = 11)
+  theme(axis.text.y = element_blank(), axis.line.y = element_blank(),
+        legend.position = c(0.88, 0.15), strip.placement = "outside",
+        axis.ticks.y = element_blank(), legend.text = element_text(size = 16),
+        axis.text = element_text(size = 16), axis.title = element_text(size = 18))
+#ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_psmuts.pdf", snp_plot_muts, height = 12, width = 7)
+#merge
+snp_plot_psgenes <- wrap_plots(snp_plot_psgenes, snp_plot_muts, ncol = 2, widths = c(0.55, 0.5))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_psgenes.pdf", snp_plot_psgenes, height = 12, width = 11)
 rm(snp_plot_muts) #clean memory
 
 # Load negative selected (NS) genes from selected pathways
-snp_nsgenes <- read.csv("mags-all/5-SNPs/dndscv/results/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+snp_nsgenes <- read.csv("article_profiling/5-SNPs/dndscv/results/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 # Infer pathway from product and add dndscv attributes
 snp_nspath <- tibble(gene_name = character(), pathway = character())
@@ -1555,8 +1589,8 @@ snp_nsgenes <- snp_nsgenes %>%
   dplyr::mutate(product = str_replace_all(product, "%2C", ",")) #change %2C to comma
 
 # Save NS gene ids to file
-if (file.exists("mags-all/5-SNPs/dndscv/results/kofam/ns_genes_ids.txt") == FALSE) {
-  write.table(snp_nsgenes$gene_id, "mags-all/5-SNPs/dndscv/results/kofam/ns_genes_ids.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+if (file.exists("article_profiling/5-SNPs/dndscv/results/kofam/ns_genes_ids.txt") == FALSE) {
+  write.table(snp_nsgenes$gene_id, "article_profiling/5-SNPs/dndscv/results/kofam/ns_genes_ids.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
 
 # Sort pathways and set colors to plot
@@ -1570,15 +1604,18 @@ snp_sort_ns$color <- c("#ddad3b", "#8c2421", "#666666", "#4f4fad") #"#6a9b85"
 # Violin plot for NS genes with global mutations
 snp_plot_nsgenes <- ggviolin(snp_nsgenes, x = "pathway", y = "wmis_cv", color = "pathway",
                              shape = "pathway", xlab = "Pathway", ylab = "dN/dS",
-                             order = snp_sort_ns$pathway, add = "jitter", legend = "none",
-                             palette = snp_sort_ns$color) +
-  scale_y_continuous(limits = c(-0.2, 1.3)) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
-  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2) +
-  stat_compare_means(method = "anova", label.y = 1.3) +
+                             order = snp_sort_ns$pathway, palette = snp_sort_ns$color,
+                             size = 0.75, add = "jitter", legend = "none") +
+  scale_y_continuous(limits = c(-0.2, 1.5)) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
+  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.4) +
+  stat_compare_means(method = "anova", label.y = 1.5, size = 6) +
   stat_compare_means(comparisons = list(c("Copper", "Iron"), c("Sulfur", "Nickel"),
-                                        c("Copper", "Nickel")), label = "p.format", method = "t.test")
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_nsgenes.pdf", snp_plot_nsgenes, height = 9, width = 7)
+                                        c("Copper", "Nickel")), label = "p.format",
+                     method = "t.test", size = 5) +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenes.pdf", snp_plot_nsgenes, height = 10, width = 7)
 
 # Merge NS genes to unique selected gene products
 snp_nsgenes_sub <- snp_nsgenes %>%
@@ -1588,13 +1625,17 @@ snp_nsgenes_sub_col <- c("#8c2421", "#666666", "#4f4fad", "#ddad3b")
 
 # Lollipop plot of grouped NS gene products
 snp_plot_nsgensub <- ggdotchart(snp_nsgenes_sub, x = "product", y = "dnds", color = "pathway",
-                                xlab = "NS gene product", ylab = "Mean dN/dS", y.text.col = TRUE,
-                                rotate = TRUE, palette = snp_nsgenes_sub_col, dot.size = 3,
-                                sorting = "descending", ggtheme = theme_pubr()) +
+                                xlab = "Product of genes under NS", ylab = "Mean dN/dS",
+                                y.text.col = TRUE, rotate = TRUE, palette = snp_nsgenes_sub_col,
+                                dot.size = 3, sorting = "descending", ggtheme = theme_pubr()) +
   scale_y_continuous(limits = c(0, 1)) +
-  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.2) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2)
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_nsgenesprod.pdf", snp_plot_nsgensub, height = 9, width = 10)
+  geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.4) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
+  font("legend.title", size = 14) +
+  theme(legend.text = element_text(size = 14),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenesprod.pdf", snp_plot_nsgensub, height = 11, width = 13)
 
 # Global gene estimation of dN/dS (PS and NS)
 snp_estim <- snp_selcv %>%
@@ -1610,9 +1651,9 @@ for (i in 1:nrow(snp_estim)) {
 	snp_contig2bin <- append(snp_contig2bin, fx_dndsContig2Bin(snp_gene2contig[i]))
 	snp_genenames <- append(snp_genenames, fx_dndsGeneName(snp_estim$gene_name[i]))
 }
-snp_estim['contig'] <- snp_gene2contig
-snp_estim['bin'] <- snp_contig2bin
-snp_estim['name'] <- snp_genenames
+snp_estim["contig"] <- snp_gene2contig
+snp_estim["bin"] <- snp_contig2bin
+snp_estim["name"] <- snp_genenames
 rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames) #clean memory
 
 # Add taxa & QC
@@ -1628,26 +1669,28 @@ snp_estim_phy <- snp_estim %>%
   dplyr::mutate(dnds_glob = dnds_sum / snps) %>% #divide by total genes and get top 3 phyla
   dplyr::filter(phylum == "Proteobacteria" | phylum == "Acidobacteriota" | phylum == "Actinobacteriota")
 
-# Sort phylum by median and set color
+# Sort phylum by median and set colors
 snp_estim_sort_phy <- snp_estim_phy %>%
   dplyr::group_by(phylum) %>%
-  dplyr::summarise(n = median(dnds_glob)) %>% #by mean?
+  dplyr::summarise(n = median(dnds_glob)) %>%
   dplyr::arrange(desc(n))
-snp_estim_sort_phy$color <- rep("#4c6194", nrow(snp_estim_sort_phy))
+snp_estim_sort_phy$color <- c("#b15928", "#98d277", "#a6cee3")
 
 # Boxplot global dN/dS ratios by phylum
 snp_plot_estim_phy <- ggboxplot(snp_estim_phy, x = "phylum", y = "dnds_glob", color = "phylum",
                                 order = snp_estim_sort_phy$phylum, palette = snp_estim_sort_phy$color,
-                                add = "jitter", legend = "none") +
-  geom_hline(yintercept = mean(snp_estim_phy$dnds_glob), linetype = 2, linewidth = 0.2) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
+                                add = "jitter", size = 0.75, legend = "none") +
+  geom_hline(yintercept = mean(snp_estim_phy$dnds_glob), linetype = 2, linewidth = 0.4) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
   labs(x = "Phylum", y = "Global normalized dN/dS ratio") +
-  stat_compare_means(method = "anova", label.y = 1.6) +
+  stat_compare_means(method = "anova", label.y = 1.6, size = 6) +
   stat_compare_means(comparisons = list(c("Proteobacteria", "Actinobacteriota"),
                                         c("Proteobacteria", "Acidobacteriota"),
                                         c("Actinobacteriota", "Acidobacteriota")),
-                     label = "p.format", method = "t.test")
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 9, width = 7)
+                     label = "p.format", method = "t.test", size = 5) +
+  theme(axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 10, width = 7)
 
 # Aggregate normalized dN/dS ratios by bin
 snp_estim_bin <- snp_estim %>%
@@ -1655,7 +1698,9 @@ snp_estim_bin <- snp_estim %>%
   dplyr::group_by(phylum, bin) %>%
   dplyr::summarise(snps = n(), dnds_sum = sum(dnds_adj)) %>%
   ungroup() %>%
-  dplyr::mutate(dnds_glob = dnds_sum / snps) #divide by total genes
+  dplyr::mutate(dnds_glob = dnds_sum / snps) %>% #divide by total genes
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MaxBin2Refined-", "")) %>% #trim bin names
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MetaBAT2Refined-", ""))
 
 # Sort bins
 snp_estim_sort_bin <- snp_estim_bin %>% dplyr::arrange(dnds_glob)
@@ -1664,13 +1709,17 @@ snp_estim_sort_bin <- snp_estim_bin %>% dplyr::arrange(dnds_glob)
 snp_plot_estim_bin <- ggbarplot(snp_estim_bin, x = "bin", y = "dnds_glob", color = "phylum",
                                 order = snp_estim_sort_bin$bin, palette = tree_colors,
                                 fill = "phylum", rotate = TRUE) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
-  labs(x = "MAG bin", y = "Global normalized dN/dS ratio")
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_estim_bin.pdf", snp_plot_estim_bin, height = 9, width = 8)
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
+  labs(x = "MAG bin", y = "Global normalized dN/dS ratio") +
+  font("legend.title", size = 14) +
+  theme(legend.text = element_text(size = 14),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_bin.pdf", snp_plot_estim_bin, height = 11, width = 8)
 
 # Load lists of PS and NS genes (externally* matched against KEGG KOs from KOfamScan hits)
-snp_kops <- read.csv("mags-all/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
-snp_kons <- read.csv("mags-all/5-SNPs/dndscv/results/kofam/ns_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+snp_kops <- read.csv("article_profiling/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+snp_kons <- read.csv("article_profiling/5-SNPs/dndscv/results/kofam/ns_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
 
 # Reduce to unique KOs, saving scores
 snp_kops <- snp_kops %>%
@@ -1694,8 +1743,12 @@ rm(snp_kops, snp_kons) #clean memory
 # Histogram for KO categories by dN/dS
 snp_plot_kos <- ggbarplot(snp_kos, x = "KO_def", y = "sum_ko", fill = "dNdS",
                           color = "white", palette = "aaas", sort.val = "asc",
-                          rotate = TRUE, xlab = "KO definition", ylab = "Aggregated KOs")
-ggsave("mags-all/5-SNPs/dndscv/results/plot/plot_dnds_kos.pdf", snp_plot_kos, height = 9, width = 12)
+                          rotate = TRUE, xlab = "KO definition", ylab = "Aggregated KOs") +
+  font("legend.title", size = 14) +
+  theme(legend.text = element_text(size = 14),
+        axis.text = element_text(size = 16),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_kos.pdf", snp_plot_kos, height = 10, width = 15)
 
 # Circos: filter the genome bin with global dN/dS >1
 snp_cirmag <- snp_estim %>% dplyr::filter(grepl("S15.49", bin))
@@ -1705,7 +1758,7 @@ snp_nodeid <- vector()
 for (i in 1:nrow(snp_cirmag)) {
   snp_nodeid <- append(snp_nodeid, str_split(snp_cirmag$contig, "_")[[i]][2])
 }
-snp_cirmag['node_id'] <- snp_nodeid
+snp_cirmag["node_id"] <- snp_nodeid
 snp_cirmag$node_id <- as.integer(snp_cirmag$node_id)
 snp_cirmag <- snp_cirmag %>% dplyr::arrange(node_id)
 rm(snp_nodeid) #clean memory
@@ -1716,15 +1769,15 @@ snp_cirsize <- c(0, 2703949)
 snp_cirran <- c(0, 0.5, 1, 1.5, 2, 2.5, 2.7) * 10^6
 
 # Export gene names & contigs
-if (file.exists("mags-all/5-SNPs/dndscv/results/circos/S15.49_genes.txt") == FALSE) {
-  write.table(snp_cirmag$gene_name, "mags-all/5-SNPs/dndscv/results/circos/S15.49_genes.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+if (file.exists("article_profiling/5-SNPs/dndscv/results/circos/S15.49_genes.txt") == FALSE) {
+  write.table(snp_cirmag$gene_name, "article_profiling/5-SNPs/dndscv/results/circos/S15.49_genes.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
-if (file.exists("mags-all/5-SNPs/dndscv/results/circos/contigs/circos_S15.49.txt") == FALSE) {
-  write.table(snp_cirmag$contig, "mags-all/5-SNPs/dndscv/results/circos/contigs/circos_S15.49.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+if (file.exists("article_profiling/5-SNPs/dndscv/results/circos/contigs/circos_S15.49.txt") == FALSE) {
+  write.table(snp_cirmag$contig, "article_profiling/5-SNPs/dndscv/results/circos/contigs/circos_S15.49.txt", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
 }
 
 # Read parsed gene annotation (externally* processed)
-snp_cirgenes <- read.csv("mags-all/5-SNPs/dndscv/results/circos/S15.49_genes_pos.txt", sep = "\t", stringsAsFactors = FALSE)
+snp_cirgenes <- read.csv("article_profiling/5-SNPs/dndscv/results/circos/S15.49_genes_pos.txt", sep = "\t", stringsAsFactors = FALSE)
 
 # Merge with genome selection <chr start end dnds gene>
 snp_cirgenes <- snp_cirgenes %>% dplyr::mutate(chr = snp_cirmagname)
@@ -1733,33 +1786,33 @@ snp_cirgenes <- snp_cirgenes %>%
   dplyr::select(-c("pmis_cv", "bin", "phylum", "completeness", "contamination", "predicted_genes"))
 
 # Use global positions for genes (externally* processed)
-snp_cirgenpos <- read.csv("mags-all/5-SNPs/dndscv/results/circos/contigs/circos_S15.49_relpos.txt", sep = "\t", stringsAsFactors = FALSE)
+snp_cirgenpos <- read.csv("article_profiling/5-SNPs/dndscv/results/circos/contigs/circos_S15.49_relpos.txt", sep = "\t", stringsAsFactors = FALSE)
 snp_cirgenes <- left_join(snp_cirgenes, snp_cirgenpos, by = c("contig"))
 snp_cirgenes <- snp_cirgenes %>% dplyr::mutate(start = start + rel_pos, end = end + rel_pos)
 rm(snp_cirgenpos) #clean memory
 
 # Circos plot
 circos.clear()
-pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_circos.pdf", height = 4, width = 4)
+pdf("article_profiling/5-SNPs/dndscv/results/plot/snp_dnds_circos.pdf", height = 4, width = 4.5)
 circos.par(cell.padding = c(0, 0))
 circos.initialize(sectors = snp_cirmagname, xlim = snp_cirsize)
 circos.track(snp_cirmagname, ylim = snp_cirsize, panel.fun = function(x, y) {
   #circos.text(snp_cirsize[1], snp_cirsize[2], cex = 0.5, adj = c(-0.05, -1.5),
   #            snp_cirmagname, facing = "bending.inside", niceFacing = TRUE)
-  text(0, 0, snp_cirmagname, cex = 0.65)
-  text(0, -0.14, paste("Genome size 2703949 bp", "phylum Actinobacteriota | genus Acidithrix",
-                       "168 contigs | N50 26686 | GC 47.7", sep = "\n"), cex = 0.55)
+  text(0, 0, "S15.49", cex = 0.7)
+  text(0, -0.15, paste("Genome size 2703949 bp", "phylum Actinobacteriota | genus Acidithrix",
+                       "168 contigs | N50 26686 | GC 47.7", sep = "\n"), cex = 0.6)
   circos.axis(h = "top", major.at = snp_cirran, labels = paste0(round(snp_cirran/10^6, 1)), #, " Mb"
-              labels.cex = 0.35, lwd = 0.7, labels.facing = "clockwise")
+              labels.cex = 0.5, lwd = 0.7, labels.facing = "clockwise") #0.35
 }, bg.col = "#6a9b85", bg.border = FALSE, track.height = 0.06)
-circos.genomicLabels(snp_cirgenes, labels.column = 7, cex = 0.35, line_lwd = 0.5,
+circos.genomicLabels(snp_cirgenes, labels.column = 7, cex = 0.45, line_lwd = 0.5,
                      side = "inside", line_col = "black", col = "black",
-                     connection_height = 0.05, labels_height = 0.06)
+                     connection_height = 0.06, labels_height = 0.06)
 dev.off()
 
 ### Enrichment ###
 ## PS genes for enrichment (we need KEGG KOs from KOfamScan)
-#snp_psenrich <- read.csv("mags-all/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = #FALSE, stringsAsFactors = FALSE)
+#snp_psenrich <- read.csv("article_profiling/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = #FALSE, stringsAsFactors = FALSE)
 #
 ## Reduce to unique KOs, saving scores (converted to foldchange)
 #snp_psenrich <- snp_psenrich %>%
@@ -1783,17 +1836,17 @@ dev.off()
 #                           TERM2NAME = snp_keggpat, pAdjustMethod = "BH", pvalueCutoff = 0.05)
 #
 ## Dotplot
-#pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_enrichdot.pdf", height = 9, width = 7)
+#pdf("article_profiling/5-SNPs/dndscv/results/plot/snp_dnds_enrichdot.pdf", height = 9, width = 7)
 #dotplot(snp_keggenrich, showCategory = 30)
 #dev.off()
 #
 ## Barplot
-#pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_enrichbar.pdf", height = 9, width = 7)
+#pdf("article_profiling/5-SNPs/dndscv/results/plot/snp_dnds_enrichbar.pdf", height = 9, width = 7)
 #barplot(snp_keggenrich, showCategory = 30)
 #dev.off()
 #
 ## Category netplot
-#pdf("mags-all/5-SNPs/dndscv/results/plot/snp_dnds_enrichnet.pdf", height = 9, width = 13)
+#pdf("article_profiling/5-SNPs/dndscv/results/plot/snp_dnds_enrichnet.pdf", height = 9, width = 13)
 #cnetplot(snp_keggenrich, showCategory = 30, categorySize = "pvalue", foldChange = snp_psenrich$KO)
 #dev.off()
 #
@@ -1805,22 +1858,28 @@ dev.off()
 
 ```{r fig3}
 # Merge plots using patchwork
-fig_3a <- wrap_plots(plot_spacer(), snp_plot_psgenes, snp_plot_estim_phy,
-                     snp_plot_estim_bin, plot_spacer(),
-                     nrow = 1, ncol = 5, widths = c(0.05, 0.75, 0.55, 0.65, 0.15))
-fig_3b <- wrap_plots(snp_plot_nsgenes, snp_plot_nsgensub, snp_plot_kos,
-                     nrow = 1, ncol = 3, widths = c(0.85, 0.85, 1))
-fig_3 <- wrap_plots(fig_3a, fig_3b, nrow = 2, heights = c(11.5, 10.5)) +
-  plot_annotation(tag_levels = list(c("a", "", "b", "c", "d", "e", "f"))) &
-  theme(plot.tag =  element_text(face = "bold"))
-ggsave("mags-all/fig_3.pdf", fig_3, height = 22, width = 28)
-#ggsave("mags-all/fig_3.png", fig_3, height = 22, width = 28)
-rm(fig_3a, fig_3b) #clean memory
+fig_3a <- wrap_plots(snp_plot_estim_bin, snp_plot_estim_phy, snp_plot_nsgenes,
+                     design = "AABBCC", heights = c(1, 0.9, 0.9)) +
+  plot_annotation(tag_levels = list(c("a", "b", "c"))) &
+  theme(plot.tag = element_text(size = 20, face = "bold"))
+ggsave("article_profiling/fig_3abc.pdf", fig_3a, height = 12, width = 21)
+#ggsave("article_profiling/fig_3abc.png", fig_3a, height = 12, width = 21)
+fig_3b <- wrap_plots(snp_plot_nsgensub, snp_plot_psgenes,
+                     design = "DDEE", heights = c(0.9, 1)) +
+  plot_annotation(tag_levels = list(c("d", "e"))) &
+  theme(plot.tag = element_text(size = 20, face = "bold"))
+ggsave("article_profiling/fig_3de.pdf", fig_3b, height = 12, width = 20)
+#ggsave("article_profiling/fig_3de.png", fig_3b, height = 12, width = 20)
+fig_3c <- wrap_plots(snp_plot_kos, design = "FFF") +
+  plot_annotation(tag_levels = list(c("f"))) &
+  theme(plot.tag = element_text(size = 20, face = "bold"))
+ggsave("article_profiling/fig_3f.pdf", fig_3c, height = 10, width = 15)
+#ggsave("article_profiling/fig_3f.png", fig_3c, height = 10, width = 15)
 
 #sup 3
 fig_s3 <- wrap_plots(snp_plot_psbins, widths = c(1)) +
   plot_annotation(tag_levels = list(c("a", "", ""))) &
-  theme(plot.tag =  element_text(face = "bold"))
-ggsave("mags-all/fig_s3.pdf", fig_s3, height = 9, width = 13)
-#ggsave("mags-all/fig_s3.png", fig_s3, height = 9, width = 13)
+  theme(plot.tag = element_text(size = 22, face = "bold"))
+#ggsave("article_profiling/fig_s3.pdf", fig_s3, height = 11, width = 17)
+#ggsave("article_profiling/fig_s3.png", fig_s3, height = 11, width = 17)
 ```

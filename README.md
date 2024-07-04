@@ -4,7 +4,20 @@ Repository that holds data, scripts and figures regarding to Biomining MAGs-SMAG
 
 ## Section 1: Taxonomy
 
+We worked with 44 bins (bacterial MAGs).
+
+See [main figure #1](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_1.png).
+
+See also [supplementary figure](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s1.png).
+
+
 ## Section 2: Metabolism
+
+We analyze our biomining-model ecosystem across conventional ecosystems to compare their capacities over selected pathways (copper, sulfur, iron metabolism). Conventional ecosystems are derived from the (bacterial) [SMAG catalog](https://microbma.github.io/project/SMAG.html).
+
+See [main figure #2](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_2.png).
+
+See also [supplementary figure](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s2.png).
 
 ## Section 3: Evolution
 
@@ -74,6 +87,14 @@ buildref: S15_refcds.rda (118.8 Mb)
 output: S15_dndsout.rda (545.9 Mb)
 ```
 
+See [main figure #3a](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_3abc.png).
+
+See [main figure #3b](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_3de.png).
+
+See [main figure #3c](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_3f.png).
+
+See also [supplementary figure](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s3.png).
+
 ## Directories structure
 
 ```
@@ -100,9 +121,11 @@ output: S15_dndsout.rda (545.9 Mb)
 | | |- gtdbtk_summary.tsv
 | | |- gtdbtk.DASTool-S15.tree
 |- figures/
-| |- fig_1.pdf
-| |- fig_2.pdf
-| |- fig_3.png
+| |- fig_1.png
+| |- fig_2.png
+| |- fig_3abc.png
+| |- fig_3de.png
+| |- fig_3f.png
 | |- fig_s1.png
 | |- fig_s2.png
 | |- fig_s3.png
