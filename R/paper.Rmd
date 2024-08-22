@@ -30,9 +30,10 @@ suppressWarnings(library(ggpubr)) #stats & plots
 suppressWarnings(library(dndscv)) #dN/dS of snps
 suppressWarnings(library(clusterProfiler)) #gene enrichment
 suppressWarnings(library(circlize)) #circular viz
+suppressWarnings(library(ggbeeswarm)) #scatter plots
 ```
 
-## Prepare and merge MAG-SMAG metadata
+## Prepare and merge MAG-SMAG
 
 ```{r magdata}
 # Read Systemix MAGs taxonomy and QC files
@@ -101,7 +102,7 @@ rm(smag_md1, smag_md2, smag_md1_sel, smag_md2_sel)
 
 ## Section 1: Taxonomic analysis 
 
-### In-depth biomining MAGs vs SMAG comparison
+### 1.1: In-depth biomining MAGs vs SMAG
 
 ```{r magcombtaxa}
 # Biomining provides a new phylum -> Nitrospirota_A
@@ -404,7 +405,7 @@ ggsave("article_profiling/4-mags-smag/1-plots-taxonomy/plot_md_kGGBs_biom.pdf", 
 #  dplyr::summarise(count = n())
 ```
 
-### QC
+### 1.2: MAGs QC
 
 ```{r magbiomqc}
 # Read QC file from CheckM
@@ -449,7 +450,7 @@ plot_mags_qc <- mags_qcs %>%
 ggsave("article_profiling/2-statistics/plots/plot_biom_MAGs_QC.pdf", plot_mags_qc, height = 4, width = 6)
 ```
 
-### Phylogenetic tree
+### 1.3: Phylogenetic tree
 
 ```{r magbiomtree}
 # Load GTDB taxonomy
@@ -580,19 +581,94 @@ plot_tree_s15_md <- ggtree(tree_s15_md, layout = "circular", size = 0.1) +
 ggsave("article_profiling/1-taxonomy/plots/plot_biom_MAGs_tree_md.pdf", plot_tree_s15_md, height = 7, width = 9)
 ```
 
+## Section 2: Abundances
+
+```{r abund}
+# Read matrix of raw abundances
+abu_depths <- read.csv("article_profiling/3-abundances/raw/bin_refined_depths_summary.tsv", sep = "\t")
+
+# Filter list to S15 sample
+abu_depths <- abu_depths %>%
+  dplyr::filter(!grepl("Unbinned", bin)) %>%
+  dplyr::filter(grepl("S15", bin)) %>%
+  dplyr::mutate(bin = str_replace_all(bin, ".fa", "")) %>%
+  dplyr::select(bin, S15)
+
+# Add phylum
+abu_depths <- left_join(abu_depths, dplyr::select(gtdb_taxonomy, label, phylum),
+                        by = join_by(bin == label))
+
+# Dotplot of global abundances by MAG size
+abu_plot_depth <- abu_depths %>%
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MaxBin2Refined-", "")) %>% #trim bin names
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MetaBAT2Refined-", "")) %>%
+  ggplot(aes(x = S15, y = reorder(bin, S15), color = phylum)) +
+  geom_point(aes(size = S15), alpha = 0.7) +
+  scale_size(range = c(0, 10)) +
+  scale_color_manual(values = tree_colors) +
+  scale_x_log10(expand = c(0.1, 0)) + #add x-axis space
+  scale_y_discrete(expand = c(0.025, 0)) + #add y-axis space
+  guides(color = guide_legend(title = "Phylum", ncol = 1), size = "none") +
+  labs(x = "Abundance (mean coverage)", y = "MAG") +
+  theme_classic() +
+  theme(legend.text = element_text(size = 11),
+        legend.title = element_text(size = 13),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+ggsave("article_profiling/3-abundances/plots/plot_abu_rank.pdf", abu_plot_depth, height = 8, width = 6)
+
+# Define top phyla
+abu_top_phy <- c("Acidobacteriota", "Actinobacteriota", "Proteobacteria")
+
+# Boxplot of abundances by top phyla
+abu_plot_depth.2 <- abu_depths %>%
+  dplyr::filter(phylum %in% abu_top_phy) %>%
+  dplyr::mutate(phylum = factor(phylum, levels = c("Actinobacteriota", "Acidobacteriota", "Proteobacteria"))) %>% #sort
+  ggplot(aes(x = phylum, y = S15, color = phylum)) +
+  geom_quasirandom(aes(size = S15), alpha = 0.7) +
+  scale_size(range = c(0, 10)) +
+  scale_y_log10() +
+  geom_boxplot(fill = NA, outlier.size = 0, outliers = FALSE) +
+  scale_color_manual(values = c("#98d277", "#a6cee3", "#b15928")) +
+  guides(size = "none", color = "none") +
+  stat_compare_means(method = "anova", label.y = 3.8, size = 4.5) + #pos by log10
+  stat_compare_means(method = "t.test", label = "p.format", ref.group = ".all.", vjust = 0.25,
+                     comparisons = list(c("Actinobacteriota", "Acidobacteriota"),
+                                        c("Actinobacteriota", "Proteobacteria"),
+                                        c("Acidobacteriota", "Proteobacteria")),
+                     label.y = c(3.3, 3.45, 3.64), bracket.size = 0.25, size = 4) +
+  labs(x = "Phylum", y = "Abundance (mean coverage)") +
+  theme_classic() +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+ggsave("article_profiling/3-abundances/plots/plot_abu_phy.pdf", abu_plot_depth.2, height = 7, width = 5)
+```
+
 ## Figures 1-2 & supplementary 1
 
 ```{r fig1}
 # Merge plots using patchwork
-fig_1 <- wrap_plots(plot_mags_qc, plot_depth_sgbs_biom, plot_tree_s15_md,
-                    design = "\nACCC\nBCCC", heights = c(0.85, 1)) +
+fig_1a <- wrap_plots(plot_mags_qc, plot_depth_sgbs_biom, plot_tree_s15_md,
+                     design = "ACCC\nBCCC", widths = c(0.6, 1)) +
   plot_annotation(tag_levels = list(c("a", "b", "c"))) &
-  theme(plot.tag = element_text(size = 18, face = "bold"))
-ggsave("article_profiling/fig_1.pdf", fig_1, height = 8, width = 15)
-ggsave("article_profiling/fig_1.png", fig_1, height = 8, width = 15)
+  theme(plot.tag = element_text(size = 16, face = "bold"))
+ggsave("article_profiling/fig_1a.pdf", fig_1, height = 8.5, width = 13)
+#ggsave("article_profiling/fig_1a.png", fig_1, height = 8.5, width = 13)
+fig_1b <- wrap_plots(abu_plot_depth, abu_plot_depth.2, widths = c(0.65, 1)) +
+  plot_annotation(tag_levels = list(c("d", "e"))) &
+  theme(plot.tag = element_text(size = 16, face = "bold"))
+ggsave("article_profiling/fig_1b.pdf", fig_1b, height = 8, width = 11)
+#ggsave("article_profiling/fig_1b.png", fig_1b, height = 8, width = 11)
+#compose
+fig_1 <- wrap_plots(fig_1a / fig_1b) +
+  plot_annotation(tag_levels = list(c("a", "b", "c", "d", "e"))) &
+  theme(plot.tag = element_text(size = 16, face = "bold"))
+ggsave("article_profiling/fig_1.pdf", fig_1, height = 16, width = 13)
+ggsave("article_profiling/fig_1.png", fig_1, height = 16, width = 13)
+rm(fig_1a, fig_1b) #clean memory
 
 fig_2 <- wrap_plots(plot_depth_sgbs_both, plot_depth_spec_eco,
-                    plot_depth_kggbs_biom, design = "\nAAABBCC\n") +
+                    plot_depth_kggbs_biom, design = "AAABBCC") +
   plot_annotation(tag_levels = list(c("a", "", "b", "c"))) &
   theme(plot.tag = element_text(size = 18, face = "bold"))
 ggsave("article_profiling/fig_2.pdf", fig_2, height = 8, width = 16)
@@ -612,9 +688,9 @@ ggsave("article_profiling/fig_s1.pdf", fig_s1, height = 15, width = 24)
 ggsave("article_profiling/fig_s1.png", fig_s1, height = 15, width = 24)
 ```
 
-## Section 2: Functional Annotation
+## Section 3: Functional Annotation
 
-### Pre-process matrix of KEGG KOs from KOfamScan
+### 3.1: Process KEGG KOs
 
 ```{r processkos}
 # Read output matrix from KOfamScan
@@ -738,7 +814,7 @@ rm(kegg_mags_eco, kegg_mags_length) #clean memory
 #kegg_mags %>% dplyr::group_by(ecosystem) %>% dplyr::summarise(total = sum(length))
 ```
 
-### Heatmap
+### 3.2: Heatmap
 
 ```{r heatmap}
 # Row-wise variance, then filter both matrix and pathways
@@ -809,7 +885,7 @@ while (!is.null(dev.list())) dev.off()
 #row.names(kegg_hm_data)[row_order(kegg_hm_plot)]
 ```
 
-### PCA (**discarded**)
+### 3.3: PCA (**discarded**)
 
 ```{r pca}
 # NOTE: selected cycles (Fe, Cu, S) have low representation in row sums,
@@ -920,7 +996,7 @@ kegg_pca_obj_pairs <- pairsplot(kegg_pca_obj, colby = "ecosystem",
 ggsave("plot_annot_pcatools_pairsplot.pdf", kegg_pca_obj_pairs, height = 7, width = 10)
 ```
 
-### Bubble and boxplots
+### 3.4: Bubble/boxplots
 
 ```{r bubble}
 # Get unique ecosystems
@@ -1281,9 +1357,7 @@ ggsave("article_profiling/fig_3.pdf", fig_3, height = 7, width = 20)
 ggsave("article_profiling/fig_3.png", fig_3, height = 7, width = 20)
 ```
 
-## Section 3: Evolutionary analysis
-
-### dN/dS
+## Section 4: Evolutionary analysis
 
 ```{r snps}
 # Buildref for 1 bin (testing for bacteria species..)
@@ -1611,21 +1685,21 @@ snp_sort_ns <- snp_nsgenes %>%
 snp_sort_ns$color <- c("#ddad3b", "#8c2421", "#666666") #"#4f4fad", "#6a9b85"
 
 # Violin plot for NS genes with global mutations
-snp_plot_nsgenes <- ggviolin(snp_nsgenes, x = "pathway", y = "wmis_cv", color = "pathway",
-                             shape = "pathway", xlab = "Pathway", ylab = "dN/dS",
-                             order = snp_sort_ns$pathway, palette = snp_sort_ns$color,
-                             size = 0.75, add = "jitter", legend = "none",
-                             add.params = list(size = 2, alpha = 0.75)) +
+snp_plot_nsgenes <- snp_nsgenes %>%
+  ggviolin(x = "pathway", y = "wmis_cv", color = "pathway", add = "jitter", shape = "pathway",
+           order = snp_sort_ns$pathway, palette = snp_sort_ns$color, legend = "none",
+           size = 0.55, add.params = list(size = 3, alpha = 0.7)) +
   scale_y_continuous(limits = c(-0.2, 1.5)) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
   geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.4) +
-  stat_compare_means(method = "anova", label.y = 1.5, size = 6) +
-  stat_compare_means(comparisons = list(c("Sulfur", "Copper"), c("Sulfur", "Iron"),
-                                        c("Copper", "Iron")), label = "p.format",
-                     method = "t.test", size = 5) +
+  labs(x = "Pathway", y = "dN/dS") +
+  stat_compare_means(method = "anova", label.y = 1.475, size = 6) +
+  stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25,
+                     comparisons = list(c("Sulfur", "Copper"), c("Sulfur", "Iron"), c("Copper", "Iron")),
+                     label.y = c(1.2, 1.27, 1.36), bracket.size = 0.25, size = 5) +
   theme(axis.text = element_text(size = 16),
-        axis.title = element_text(size = 20))
-ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenes.pdf", snp_plot_nsgenes, height = 10, width = 7)
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenes.pdf", snp_plot_nsgenes, height = 9, width = 6)
 
 # Merge NS genes to unique selected gene products
 snp_nsgenes_sub <- snp_nsgenes %>%
@@ -1633,19 +1707,19 @@ snp_nsgenes_sub <- snp_nsgenes %>%
   dplyr::summarise(dnds = mean(wmis_cv), .groups = "drop")
 snp_nsgenes_sub_col <- c("#8c2421", "#666666", "#ddad3b")
 
-# Lollipop plot of grouped NS gene products
-snp_plot_nsgensub <- ggdotchart(snp_nsgenes_sub, x = "product", y = "dnds", color = "pathway",
-                                xlab = "Product of genes under NS", ylab = "Mean dN/dS",
-                                y.text.col = TRUE, rotate = TRUE, palette = snp_nsgenes_sub_col,
-                                dot.size = 3, sorting = "descending", ggtheme = theme_pubr()) +
+# Dotplot of grouped products of NS genes
+snp_plot_nsgensub <- snp_nsgenes_sub %>%
+  dplyr::rename(Pathway = pathway) %>% #rename col.
+  ggdotchart(x = "product", y = "dnds", color = "Pathway", y.text.col = TRUE, rotate = TRUE,
+             palette = snp_nsgenes_sub_col, dot.size = 3, sorting = "descending") + #add = "segments"
   scale_y_continuous(limits = c(0, 1)) +
   geom_hline(yintercept = mean(snp_nsgenes$wmis_cv), linetype = 2, linewidth = 0.4) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
-  font("legend.title", size = 14) +
+  labs(x = "NS gene products", y = "Mean dN/dS") +
+  font("legend.title", size = 15) +
   theme(legend.text = element_text(size = 14),
-        axis.text = element_text(size = 16),
-        axis.title = element_text(size = 20))
-ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenesprod.pdf", snp_plot_nsgensub, height = 11, width = 13)
+        axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenesprod.pdf", snp_plot_nsgensub, height = 10, width = 11)
 
 # Global gene estimation of dN/dS (PS and NS)
 snp_estim <- snp_selcv %>%
@@ -1687,21 +1761,22 @@ snp_estim_sort_phy <- snp_estim_phy %>%
 snp_estim_sort_phy$color <- c("#b15928", "#98d277", "#a6cee3")
 
 # Boxplot global dN/dS ratios by phylum
-snp_plot_estim_phy <- ggboxplot(snp_estim_phy, x = "phylum", y = "dnds_glob", color = "phylum",
-                                order = snp_estim_sort_phy$phylum, palette = snp_estim_sort_phy$color,
-                                add = "jitter", size = 0.75, legend = "none",
-                                add.params = list(size = 3, alpha = 0.75)) +
+snp_plot_estim_phy <- snp_estim_phy %>%
+  ggboxplot(x = "phylum", y = "dnds_glob", color = "phylum", add = "jitter",
+            order = snp_estim_sort_phy$phylum, palette = snp_estim_sort_phy$color,
+             size = 0.55, legend = "none", add.params = list(size = 3.25, alpha = 0.7)) +
   geom_hline(yintercept = mean(snp_estim_phy$dnds_glob), linetype = 2, linewidth = 0.4) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
   labs(x = "Phylum", y = "Global normalized dN/dS ratio") +
-  stat_compare_means(method = "anova", label.y = 1.6, size = 6) +
-  stat_compare_means(comparisons = list(c("Proteobacteria", "Actinobacteriota"),
+  stat_compare_means(method = "anova", label.y = 1.475, size = 6) +
+  stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25,
+                     comparisons = list(c("Proteobacteria", "Actinobacteriota"),
                                         c("Proteobacteria", "Acidobacteriota"),
                                         c("Actinobacteriota", "Acidobacteriota")),
-                     label = "p.format", method = "t.test", size = 5) +
-  theme(axis.text = element_text(size = 16),
-        axis.title = element_text(size = 20))
-ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 10, width = 7)
+                     label.y = c(1.25, 1.325, 1.4), bracket.size = 0.25, size = 5) +
+  theme(axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 9, width = 6)
 
 # Aggregate normalized dN/dS ratios by bin
 snp_estim_bin <- snp_estim %>%
@@ -1717,16 +1792,17 @@ snp_estim_bin <- snp_estim %>%
 snp_estim_sort_bin <- snp_estim_bin %>% dplyr::arrange(dnds_glob)
 
 # Barplot global dN/dS ratios by MAG bins
-snp_plot_estim_bin <- ggbarplot(snp_estim_bin, x = "bin", y = "dnds_glob", color = "phylum",
-                                order = snp_estim_sort_bin$bin, palette = tree_colors,
-                                fill = "phylum", rotate = TRUE) +
+snp_plot_estim_bin <- snp_estim_bin %>%
+  dplyr::rename(Phylum = phylum) %>% #rename col.
+  ggbarplot(x = "bin", y = "dnds_glob", color = "Phylum", fill = "Phylum", legend = "right",
+            order = snp_estim_sort_bin$bin, palette = tree_colors, rotate = TRUE) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
-  labs(x = "MAG bin", y = "Global normalized dN/dS ratio") +
-  font("legend.title", size = 14) +
+  labs(x = "MAG", y = "Global normalized dN/dS ratio") +
+  font("legend.title", size = 15) +
   theme(legend.text = element_text(size = 14),
-        axis.text = element_text(size = 16),
-        axis.title = element_text(size = 20))
-ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_bin.pdf", snp_plot_estim_bin, height = 11, width = 8)
+        axis.text = element_text(size = 15),
+        axis.title = element_text(size = 18))
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_bin.pdf", snp_plot_estim_bin, height = 9, width = 7)
 
 # Load lists of PS and NS genes (externally* matched against KEGG KOs from KOfamScan hits)
 snp_kops <- read.csv("article_profiling/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
@@ -1869,28 +1945,34 @@ dev.off()
 
 ```{r fig4}
 # Merge plots using patchwork
-fig_4 <- wrap_plots(snp_plot_estim_bin, snp_plot_estim_phy, design = "AABB", heights = c(1, 0.9)) +
+fig_4 <- wrap_plots(snp_plot_estim_bin, snp_plot_estim_phy, widths = c(0.6, 1)) +
   plot_annotation(tag_levels = list(c("a", "b"))) &
-  theme(plot.tag = element_text(size = 22, face = "bold"))
-ggsave("article_profiling/fig_4.pdf", fig_4, height = 12, width = 15)
-ggsave("article_profiling/fig_4.png", fig_4, height = 12, width = 15)
+  theme(plot.tag = element_text(size = 20, face = "bold"))
+ggsave("article_profiling/fig_4.pdf", fig_4, height = 10, width = 13)
+ggsave("article_profiling/fig_4.png", fig_4, height = 10, width = 13)
 
-fig_5a <- wrap_plots(snp_plot_nsgenes, snp_plot_nsgensub, design = "AABB", heights = c(0.9, 1)) +
+fig_5a <- wrap_plots(snp_plot_nsgenes, snp_plot_nsgensub, widths = c(1, 1)) +
   plot_annotation(tag_levels = list(c("a", "b"))) &
-  theme(plot.tag = element_text(size = 22, face = "bold"))
-ggsave("article_profiling/fig_5a.pdf", fig_5a, height = 11, width = 19)
-ggsave("article_profiling/fig_5a.png", fig_5a, height = 11, width = 19)
-
+  theme(plot.tag = element_text(size = 20, face = "bold"))
+ggsave("article_profiling/fig_5a.pdf", fig_5a, height = 10, width = 15)
+#ggsave("article_profiling/fig_5a.png", fig_5a, height = 10, width = 15)
 fig_5b <- wrap_plots(snp_plot_psgenes, snp_plot_kos, design = "AABBB", heights = c(0.9, 1)) +
   plot_annotation(tag_levels = list(c("c", "d"))) &
   theme(plot.tag = element_text(size = 22, face = "bold"))
-ggsave("article_profiling/fig_5b.pdf", fig_5b, height = 12, width = 23)
-ggsave("article_profiling/fig_5b.png", fig_5b, height = 12, width = 23)
+ggsave("article_profiling/fig_5b.pdf", fig_5b, height = 12, width = 22)
+#ggsave("article_profiling/fig_5b.png", fig_5b, height = 12, width = 22)
+#compose
+fig_5 <- wrap_plots(wrap_plots(fig_5a, plot_spacer(), widths = c(1, 0.35)) / fig_5b) +
+  plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
+  theme(plot.tag = element_text(size = 22, face = "bold"))
+ggsave("article_profiling/fig_5.pdf", fig_5, height = 22, width = 22)
+ggsave("article_profiling/fig_5.png", fig_5, height = 22, width = 22)
+rm(fig_5a, fig_5b) #clean memory
 
 #sup 3
-fig_s3 <- wrap_plots(snp_plot_psbins, widths = c(1)) +
-  plot_annotation(tag_levels = list(c("a", "", ""))) &
-  theme(plot.tag = element_text(size = 22, face = "bold"))
+#fig_s3 <- wrap_plots(snp_plot_psbins, widths = c(1)) +
+#  plot_annotation(tag_levels = list(c("a", "", ""))) &
+#  theme(plot.tag = element_text(size = 22, face = "bold"))
 #ggsave("article_profiling/fig_s3.pdf", fig_s3, height = 11, width = 17)
 #ggsave("article_profiling/fig_s3.png", fig_s3, height = 11, width = 17)
 ```

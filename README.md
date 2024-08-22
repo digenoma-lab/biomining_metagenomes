@@ -2,26 +2,25 @@
 
 Repository that holds data, scripts and figures regarding to Biomining MAGs-SMAG article: **"Profiling extremophile bacterial communities recovered from a mining tailing against soil ecosystems through comparative metagenomics"**.
 
-## Section 1: Taxonomy
+## Section 1: Taxonomy, QC and abundances
 
-We worked with 44 bacterial MAGs.
+We classified a set of 44 bacterial MAGs belonging to the ```S15``` sample.
 
 See [main figure #1](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_1.png).
 
 See [main figure #2](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_2.png).
 
-See also [supplementary figure](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s1.png).
+See also [supplementary figure #1](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s1.png).
 
+## Section 2: Functional annotation
 
-## Section 2: Metabolism
-
-We analyze our biomining-model ecosystem across conventional ecosystems to compare their capacities over selected pathways (copper, iron, and sulfur). Conventional ecosystems are derived from the (bacterial) [SMAG catalog](https://microbma.github.io/project/SMAG.html).
+We analyze our biomining-model ecosystem across conventional ecosystems to compare their capacities over selected pathways (copper, iron, and sulfur). Conventional ecosystems are derived from the [SMAG catalog](https://microbma.github.io/project/SMAG.html) (bacterial subset).
 
 See [main figure #3](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_3.png).
 
-See also [supplementary figure](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s2.png).
+See also [supplementary figure #2](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s2.png).
 
-## Section 3: Evolution
+## Section 3: Evolutionary analysis
 
 1. Build the reference index with [bwa-mem2](https://github.com/bwa-mem2/bwa-mem2):
 ```
@@ -41,7 +40,7 @@ Note: working directory in the Kütral cluster: ```/mnt/beegfs/home/mrojas/DiGen
 #mpileup algorithm
 bcftools mpileup -Ov -f S15_bins.fasta S15_bins.bam | bcftools call --ploidy 1 -mv -Ov -o S15.vcf
 ```
-Now, we have our ```VCF``` file (```S15.vcf```).
+Now, we have our ```S15.vcf``` file.
 3. Install, configure and run [SnpEff](https://pcingola.github.io/SnpEff/snpeff/introduction/) to annotate variants:
 ```
 #go to dir for preparing files
@@ -91,11 +90,9 @@ output: S15_dndsout.rda (545.9 Mb)
 
 See [main figure #4](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_4.png).
 
-See [main figure #5a](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_5a.png).
+See [main figure #5](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_5.png).
 
-See [main figure #5b](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_5b.png).
-
-See also [supplementary figure](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s3.png).
+See also [supplementary figure #3](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s3.png).
 
 ## Directories structure
 
@@ -111,9 +108,6 @@ See also [supplementary figure](https://github.com/digenoma-lab/biomining_metage
 | | |- mags_metadata.tsv
 | | |- mags_mining_S15.tsv
 | | |- smag_filtered_bins.tsv
-| | |- SMAG_mag20177_refined.tree
-| |- QC/
-| | |- mags_S15.txt
 | |- taxonomy/
 | | |- gtdbtk.DASTool-S15.tree
 |- figures/
@@ -121,8 +115,7 @@ See also [supplementary figure](https://github.com/digenoma-lab/biomining_metage
 | |- fig_2.png
 | |- fig_3.png
 | |- fig_4.png
-| |- fig_5a.png
-| |- fig_5b.png
+| |- fig_5.png
 | |- fig_s1.png
 | |- fig_s2.png
 | |- fig_s3.png
