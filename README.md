@@ -94,6 +94,10 @@ See [main figure #5](https://github.com/digenoma-lab/biomining_metagenomes/blob/
 
 See also [supplementary figure #3](https://github.com/digenoma-lab/biomining_metagenomes/blob/main/figures/fig_s3.png).
 
+## Supplementary material
+
+See [supplementary tables](https://docs.google.com/spreadsheets/d/1cci69qkc_zJ21pChGYJtFjSIESJAO0ri/edit?gid=233488985#gid=233488985).
+
 ## Directories structure
 
 ```
@@ -124,3 +128,7 @@ See also [supplementary figure #3](https://github.com/digenoma-lab/biomining_met
 | |- paper.Rmd
 | |- paper.RData
 ```
+
+## Citation
+
+Moises A. Rojas, Gladis Serrano, Jorge Torres, Jaime Ortega, Gabriel Gálvez, Emilio Vilches, Valentina Parra, Angélica Reyes-Jara, Vinicius Maracaja-Coutinho, Lorena Pizarro, Mauricio Latorre, Alex Di Genova; "Profiling extremophile bacterial communities recovered from a mining tailing against soil ecosystems through comparative genome-resolved metagenomics and evolutionary analysis", bioRxiv, 2024, doi: [10.1101/2024.08.28.610100](https://www.biorxiv.org/content/10.1101/2024.08.28.610100v1).
