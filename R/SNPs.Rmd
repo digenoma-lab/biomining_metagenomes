@@ -1,0 +1,180 @@
+---
+title: "Snps_stats"
+author: "Alex Di Genova"
+date: "2024-12-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## load data
+
+```{r read_vcf}
+library(vcfR)
+vcf_file <- "../data/snps/S15_filtered.vcf.gz"  # Replace with your VCF file path
+vcf_data <- read.vcfR(vcf_file)
+
+```
+
+## QC mutations
+
+```{r pressure, echo=FALSE}
+library(tidyverse)
+dp_data <- vcfR::extract.info(vcf_data, element = "DP")  # Replace "DP" with your desired INFO field
+dp_data <- as.numeric(dp_data)
+
+fixed_data <- getFIX(vcf_data)
+qual <- as.numeric(fixed_data[,"QUAL"])
+fixed_data=cbind(fixed_data,dp_data) 
+#we create a dataframe and convert some text data to numeric
+fixed_data=as.data.frame(fixed_data) %>% mutate(QUAL=as.numeric(QUAL),dp_data=as.numeric(dp_data))
+
+fixed_data=fixed_data %>% select(-FILTER,-ID)
+```
+
+
+Some basic plots for quality control
+
+```{r plots}
+library(patchwork)
+# Histogram for QUAL
+p1=ggplot(fixed_data, aes(x = QUAL)) +
+  geom_histogram(binwidth = 5, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of Variant Quality", x = "Quality (phred)", y = "Frequency") +
+  theme_minimal()
+
+# Histogram for dp_data
+p2=ggplot(fixed_data, aes(x = dp_data)) +
+  geom_histogram(binwidth = 5, fill = "orange", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of variant read depth (DP)", x = "Depth", y = "Frequency") +
+  theme_minimal()
+
+p1+p2
+```
+
+# MAGs
+
+We load the MAG information for each contig
+
+```{r rmag}
+mag=read.table("../data/snps/S15.ctg2bins.txt",h=F)
+colnames(mag)=c("MAG","CTG")
+fixed_data=left_join(fixed_data,mag,by=c("CHROM"="CTG"))
+
+#contig coverage
+ccov=read.table("../data/snps/S15_bins.depth.mosdepth.summary.txt",h=T)
+ccov=left_join(ccov,mag,by=c("chrom"="CTG"))
+#we compute mag coverage
+mag_cov=ccov %>% group_by(MAG) %>%summarize(l=sum(length),bases=sum(bases)) %>% mutate(mean_cov=bases/l)
+#we compute number of mutations per MAG
+mag_mut=fixed_data %>% group_by(MAG) %>% summarize(count=n())
+#we join mag mut and cov
+mag_mut_cov=left_join(mag_mut,mag_cov)
+mag_mut_cov$mutations_per_megabase <- mag_mut_cov$count / (mag_mut_cov$l / 1e6)
+#we plot mutations per megabase
+
+#we load some mag stats from checkM result
+mag_qual=read.delim("../data/MAG_SMAG/mags_mining_S15.tsv",header=T)
+mag_qual$mag=paste0(mag_qual$mag_name,".",mag_qual$mag_id)
+mag_qual=mag_qual %>% select(mag,phylum,class,order,completeness,contamination,strain_heterogeneity,genome_size,gc,N50)
+mag_mut_cov_tax=left_join(mag_mut_cov,mag_qual, by=c("MAG"="mag"))
+
+```
+
+we build a linear model to check if variants can be explained by some variable
+
+```{r lmodel}
+a=lm(data=mag_mut_cov_tax,log(mutations_per_megabase)~mean_cov+contamination+gc+strain_heterogeneity+completeness+phylum)
+summary(a)
+
+# we plot some interesting associations
+# Fit a linear model
+model <- lm(log(mutations_per_megabase) ~ strain_heterogeneity, data = mag_mut_cov_tax)
+
+# Extract R-squared and p-value
+r_squared <- summary(a)$r.squared
+p_value <- summary(a)$coefficients[5, 4]
+
+p1=ggplot(mag_mut_cov_tax, aes(x=strain_heterogeneity,y=log(mutations_per_megabase), color=phylum)) +
+  geom_point(size = 3) +  # Add points
+  geom_smooth(method = "lm", se = TRUE, color = "blue", linetype = "dashed") +  # Add linear model
+  labs(
+    title = "Mutations per Megabase vs Strain heterogeneity",
+    x = "Strain heterogeneity",
+    y = "Mutations per Megabase"
+  ) +
+  annotate("text", x = max(mag_mut_cov_tax$strain_heterogeneity) * 0.7, y = max(log(mag_mut_cov_tax$mutations_per_megabase)), 
+           label = paste0("R² = ", round(r_squared, 3), 
+                          "\nP-value = ", signif(p_value, 3)), 
+           color = "black", size = 5, hjust = 0) +
+  theme_minimal()
+
+# Fit a linear model
+model <- lm(mutations_per_megabase ~ gc, data = mag_mut_cov_tax)
+
+# Extract R-squared and p-value
+r_squared <- summary(model)$r.squared
+p_value <- summary(model)$coefficients[2, 4]
+
+p2=ggplot(mag_mut_cov_tax, aes(x=gc,y=mutations_per_megabase, color=phylum)) +
+  geom_point(size = 3) +  # Add points
+  geom_smooth(method = "lm", se = TRUE, color = "blue", linetype = "dashed") +  # Add linear model
+  labs(
+    title = "Mutations per Megabase vs GC-content",
+    x = "GC-content",
+    y = "Mutations per Megabase"
+  ) +
+  annotate("text", x = max(mag_mut_cov_tax$gc) * 0.7, y = max(mag_mut_cov_tax$mutations_per_megabase), 
+           label = paste0("R² = ", round(r_squared, 3), 
+                          "\nP-value = ", signif(p_value, 3)), 
+           color = "black", size = 5, hjust = 0) +
+  theme_minimal()
+
+
+# Fit a linear model
+model <- lm(mutations_per_megabase ~ mean_cov, data = mag_mut_cov_tax)
+
+# Extract R-squared and p-value
+r_squared <- summary(model)$r.squared
+p_value <- summary(model)$coefficients[2, 4]
+
+p3=ggplot(mag_mut_cov_tax, aes(x=mean_cov,y=mutations_per_megabase, color=phylum)) +
+  geom_point(size = 3) +  # Add points
+  geom_smooth(method = "lm", se = TRUE, color = "blue", linetype = "dashed") +  # Add linear model
+  labs(
+    title = "Mutations per Megabase vs Genome Coverage",
+    x = "Genome coverage",
+    y = "Mutations per Megabase"
+  ) +
+  annotate("text", x = max(mag_mut_cov_tax$mean_cov) * 0.7, y = max(mag_mut_cov_tax$mutations_per_megabase), 
+           label = paste0("R² = ", round(r_squared, 3), 
+                          "\nP-value = ", signif(p_value, 3)), 
+           color = "black", size = 5, hjust = 0) +
+  theme_minimal()
+
+
+(p1+p2+p3) + plot_layout(guides = "collect") & theme(legend.position = "bottom")
+
+```
+
+
+Plot by phylum
+
+```{r fplot}
+library(ggplot2)
+
+# Plot mutations per megabase by phylum
+ggplot(mag_mut_cov_tax, aes(x = phylum, y = log(mutations_per_megabase), fill = phylum)) +
+  geom_boxplot() +
+  scale_y_log10() +  # Use log10 scale for better visualization if the range is wide
+  labs(
+    title = "Variants per Megabase by Phylum",
+    x = "Phylum",
+    y = "Variants per Megabase"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels
+
+```
