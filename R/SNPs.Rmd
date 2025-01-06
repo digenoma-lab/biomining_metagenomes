@@ -182,16 +182,16 @@ ggplot(mag_mut_cov_tax, aes(x = phylum, y = log(mutations_per_megabase), fill = 
 
 ## InStrain
 
-WE use variants from InStrain caller using two ANI filters at 95% (default) and 97% (custom). It seem that the custom produce better results
+We use variants from InStrain caller using three ANI filters at 95% (default), 97% (custom), and 98% (custom2). It seem that the custom produce better results.
 
 ```{r loadinstratin}
-
-
 d1=read.table(gzfile("../data/snps/InStrain/is_S15_def_SNVs.tsv.gz"),h=T,sep="\t")
 #d1=d1 %>% filter(class == "SNV")
 d2=read.table(gzfile("../data/snps/InStrain/is_S15_custom_SNVs.tsv.gz"),h=T,sep="\t")
 #d2=d2 %>% filter(class == "SNV")
+d3 <- read.table(gzfile("../data/snps/InStrain/is_S15_custom2_SNVs.tsv.gz"),h=T,sep="\t")
 ```
+
 We filter for a minimum of read coverage >=5 for each allele
 
 ```{r filter1}
@@ -220,7 +220,6 @@ head(filtered_d1)
 
 filtered_d1=left_join(filtered_d1,mag,by=c("scaffold"="CTG"))
 
-
 # Filter rows where both the reference and variant allele have at least 5 reads
 filtered_d2 <- d2 %>%
   filter(ref_base %in% c("A", "C", "T", "G") &  # Ensure valid base
@@ -241,13 +240,32 @@ filtered_d2 <- d2 %>%
               TRUE ~ FALSE
             )))
 
+# ANI of 98%
+filtered_d3 <- d3 %>%
+  filter(ref_base %in% c("A", "C", "T", "G") &  # Ensure valid base
+           con_base %in% c("A", "C", "T", "G") &
+           var_base %in% c("A", "C", "T", "G") &
+           (case_when(
+              ref_base == "A" ~ A >= 5,
+              ref_base == "C" ~ C >= 5,
+              ref_base == "T" ~ T >= 5,
+              ref_base == "G" ~ G >= 5,
+              TRUE ~ FALSE)) &
+           (case_when(
+              var_base == "A" ~ A >= 5,
+              var_base == "C" ~ C >= 5,
+              var_base == "T" ~ T >= 5,
+              var_base == "G" ~ G >= 5,
+              TRUE ~ FALSE)))
+
 # View the filtered data at 97% ANI
 head(filtered_d2)
 filtered_d2=left_join(filtered_d2,mag,by=c("scaffold"="CTG"))
+
+# View the filtered data at 98% ANI
+head(filtered_d3)
+filtered_d3 <- left_join(filtered_d3, mag, by = c("scaffold" = "CTG"))
 ```
-
-
-
 
 We perform some analysis at MAG level, first we add the metadata
 
@@ -258,12 +276,19 @@ mag_mut_cov_d1=left_join(mag_mut_d1,mag_cov)
 mag_mut_cov_d1$mutations_per_megabase <- mag_mut_cov_d1$n / (mag_mut_cov_d1$l / 1e6)
 mag_mut_cov_tax_d1=left_join(mag_mut_cov_d1,mag_qual, by=c("MAG"="mag"))
 
-#custom
+#custom 97%
 mag_mut_d2=filtered_d2 %>% group_by(MAG) %>% summarise(n=n()) %>% arrange(desc(n))
 #we join mag mut and cov
 mag_mut_cov_d2=left_join(mag_mut_d2,mag_cov)
 mag_mut_cov_d2$mutations_per_megabase <- mag_mut_cov_d2$n / (mag_mut_cov_d2$l / 1e6)
 mag_mut_cov_tax_d2=left_join(mag_mut_cov_d2,mag_qual, by=c("MAG"="mag"))
+
+#custom 98%
+mag_mut_d3 <- filtered_d3 %>% group_by(MAG) %>% summarise(n=n()) %>% arrange(desc(n))
+#we join mag mut and cov
+mag_mut_cov_d3 <- left_join(mag_mut_d3, mag_cov)
+mag_mut_cov_d3$mutations_per_megabase <- mag_mut_cov_d3$n / (mag_mut_cov_d3$l / 1e6)
+mag_mut_cov_tax_d3 <- left_join(mag_mut_cov_d3, mag_qual, by = c("MAG" = "mag"))
 ```
  
 ```{r plotsqc}
@@ -365,11 +390,57 @@ p2=ggplot(filtered_d2, aes(x = position_coverage)) +
 p3+p2+p1
 ```
 
+
+```{r plotsqc3}
+data <- data.frame(
+  Category = c(
+    "Total mapped pairs",
+    "Pairs passing max insert size threshold",
+    "Pairs passing min insert size threshold",
+    "Pairs passing mapQ threshold",
+    "Pass min read ANI",
+    "Total filtered pairs"
+  ),
+  Percentage = c(100, 100, 99, 99, 84, 83)
+)
+
+# Create the barplot
+p3=ggplot(data, aes(x = reorder(Category, -Percentage), y = Percentage, fill = Category)) +
+  geom_bar(stat = "identity", width = 0.7, color = "black") +
+  coord_flip() +  # Flip the coordinates for a horizontal barplot
+  labs(
+    title = "Mapping and Filtering Metrics",
+    x = "Category",
+    y = "Percentage"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Show percentage on the y-axis
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14),
+    plot.title = element_text(size = 16, face = "bold")
+  )
+
+# Histogram for QUAL
+p1=ggplot(filtered_d3, aes(x = var_freq)) +
+  geom_histogram(binwidth = 0.05, fill = "blue", color = "black", alpha = 0.7) +
+  labs(title = "Variant Allele Frequency", x = "VAF", y = "Frequency") +
+  theme_minimal()
+
+# Histogram for dp_data
+p2=ggplot(filtered_d3, aes(x = position_coverage)) +
+  geom_histogram(binwidth = 10, fill = "orange", color = "black", alpha = 0.7) +
+  labs(title = "Distribution of variant read depth (DP)", x = "Depth", y = "Frequency") +
+  xlim(c(5,1000))+
+  theme_minimal()
+
+p3+p2+p1
+```
+
+We build a linear model to test for association regarding the number of mutations
  
- We build a linear model to test for association regarding the number of mutations
- 
- 
-```{r lmodel2d1}
+```{r lmodeld1}
 a=lm(data=mag_mut_cov_tax_d1,mutations_per_megabase~mean_cov+contamination+gc+strain_heterogeneity+completeness)
 summary(a)
 ```
@@ -418,7 +489,7 @@ ggplot(long_data, aes(x = value, y = mutations_per_megabase, color=phylum)) +
 
 
  
-```{r lmodel2}
+```{r lmodeld2}
 a=lm(data=mag_mut_cov_tax_d2,mutations_per_megabase~mean_cov+contamination+gc+strain_heterogeneity+completeness)
 summary(a)
 ```
@@ -466,6 +537,52 @@ ggplot(long_data, aes(x = value, y = mutations_per_megabase, color=phylum)) +
   theme_minimal()
 ```
 
+```{r lmodeld3}
+a <- lm(data=mag_mut_cov_tax_d3,mutations_per_megabase~mean_cov+contamination+gc+strain_heterogeneity+completeness)
+summary(a)
+```
+
+```{r modelplotd3}
+# Extract p-values for each predictor
+p_values <- summary(a)$coefficients[-1, 4]  # Exclude intercept
+predictor_names <- names(p_values)
+
+# Reshape data to long format for faceted plotting
+long_data <- mag_mut_cov_tax_d3 %>%
+  pivot_longer(
+    cols = c(mean_cov, contamination, gc, strain_heterogeneity, completeness),
+    names_to = "predictor",
+    values_to = "value"
+  )
+
+# Add p-values as a label to the dataset
+long_data <- long_data %>%
+  mutate(
+    p_value_label = case_when(
+      predictor == "mean_cov" ~ paste0("p = ", signif(p_values["mean_cov"], 3)),
+      predictor == "contamination" ~ paste0("p = ", signif(p_values["contamination"], 3)),
+      predictor == "gc" ~ paste0("p = ", signif(p_values["gc"], 3)),
+      predictor == "strain_heterogeneity" ~ paste0("p = ", signif(p_values["strain_heterogeneity"], 3)),
+      predictor == "completeness" ~ paste0("p = ", signif(p_values["completeness"], 3)),
+      TRUE ~ NA_character_
+    )
+  )
+
+# Plot with facets and p-value annotations
+ggplot(long_data, aes(x = value, y = mutations_per_megabase, color=phylum)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  facet_wrap(~ predictor, scales = "free_x") +
+  geom_text(data = distinct(long_data, predictor, p_value_label),  # Avoid duplicate labels
+            aes(x = Inf, y = Inf, label = p_value_label),
+            hjust = 1.1, vjust = 1.5, inherit.aes = FALSE) +
+  labs(
+    title = "Response vs Predictors with p-values",
+    x = "Predictor Value",
+    y = "Mutations per Megabase"
+  ) +
+  theme_minimal()
+```
 
 Highly significant (p < 0.001). Each unit increase in mean_cov is associated with an increase of ~4.32 mutations per megabase 
 
@@ -502,4 +619,5 @@ ggplot(filtered_data, aes(x = phylum, y = mutations_per_megabase, fill = phylum)
   theme(legend.position = "none")
 
 ```
+
 There is no strong evidence that the mean number of mutations per megabase differs significantly among the phyla included in the filtered dataset.
