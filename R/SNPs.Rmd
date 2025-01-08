@@ -220,7 +220,7 @@ head(filtered_d1)
 
 filtered_d1=left_join(filtered_d1,mag,by=c("scaffold"="CTG"))
 
-# Filter rows where both the reference and variant allele have at least 5 reads
+# ANI of 97%: filter rows where both the reference and variant allele have at least 5 reads
 filtered_d2 <- d2 %>%
   filter(ref_base %in% c("A", "C", "T", "G") &  # Ensure valid base
            con_base %in% c("A", "C", "T", "G") &
@@ -240,7 +240,11 @@ filtered_d2 <- d2 %>%
               TRUE ~ FALSE
             )))
 
-# ANI of 98%
+# View the filtered data
+head(filtered_d2)
+filtered_d2=left_join(filtered_d2,mag,by=c("scaffold"="CTG"))
+
+# ANI of 98%: filter rows where both the reference and variant allele have at least 5 reads
 filtered_d3 <- d3 %>%
   filter(ref_base %in% c("A", "C", "T", "G") &  # Ensure valid base
            con_base %in% c("A", "C", "T", "G") &
@@ -258,11 +262,7 @@ filtered_d3 <- d3 %>%
               var_base == "G" ~ G >= 5,
               TRUE ~ FALSE)))
 
-# View the filtered data at 97% ANI
-head(filtered_d2)
-filtered_d2=left_join(filtered_d2,mag,by=c("scaffold"="CTG"))
-
-# View the filtered data at 98% ANI
+# View the filtered data
 head(filtered_d3)
 filtered_d3 <- left_join(filtered_d3, mag, by = c("scaffold" = "CTG"))
 ```
@@ -621,3 +621,38 @@ ggplot(filtered_data, aes(x = phylum, y = mutations_per_megabase, fill = phylum)
 ```
 
 There is no strong evidence that the mean number of mutations per megabase differs significantly among the phyla included in the filtered dataset.
+
+# Global dN/dS ratios 
+
+We next compared the global selection pressure ratios of MAGs derived from the custom and custom2 variant calling (inStrain ANI 97% and 98%), calculated with dNdScv according to our methodology.
+
+```{r magsdnds}
+# Read dN/dS ratios calculated with calling at ANI of 97% and 98%
+dnds_instrain <- read.csv("../data/snps/dnds_inStrain_compare.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+# Fit a linear model comparing ratios
+dnds_instrain_lm <- lm(dnds_is97 ~ dnds_is98, data = dnds_instrain)
+
+# Extract R-squared and p-value
+dnds_instrain_lm_rs <- summary(dnds_instrain_lm)$r.squared
+dnds_instrain_lm_pv <- summary(dnds_instrain_lm)$coefficients[2, 4]
+
+# Plot model (top three phyla)
+dnds_plot_instrain_lm <- dnds_instrain %>%
+  ggplot(aes(x = dnds_is98, y = dnds_is97, color = phylum)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue", linewidth = 0.5) +
+  scale_x_continuous(limits = c(0.2, 1.05)) +
+  scale_color_manual(values = c("#98d277", "#a6cee3", "#b15928")) +
+  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.25) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.25) +
+  labs(x = "dN/dS (ANI 98%)", y = "dN/dS (ANI 97%)", title = "Global dN/dS ratios of MAGs") +
+  annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
+           label = paste0("R² = ", round(dnds_instrain_lm_rs, 3), 
+                          "\nP-value = ", signif(dnds_instrain_lm_pv, 3))) +
+  theme_minimal()
+
+dnds_plot_instrain_lm
+```
+
+The model tends to be more rigorous by using inStrain at ANI of 97% (no MAGs with global positive selection were detected).
