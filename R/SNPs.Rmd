@@ -657,58 +657,71 @@ dnds_plot_instrain_lm
 
 The model tends to be more rigorous by using inStrain at ANI of 97% (no MAGs with global positive selection were detected).
 
-# Global dN/dS of S15 MAGs vs all samples
+# Global dN/dS of S15 MAGs across all samples
 
-Next, we compared the global ratios of the 44 MAGs from S15 (at default ANI: 95%) with the results of this sample mapped across all samples (eight metagenomes; ANI 97% and 98%).
+Next, we compared the global ratios of the 44 MAGs from S15 (at default ANI: 95%) with the results of this sample mapped across all samples (eight metagenomes; at selected ANI of 95%, 97% and 98%).
 
 ```{r s15dnds}
-#library(ggbeeswarm)
-# Read the data from each dNdScv run:
+library(ggbeeswarm)
+
+# Read global ratios of the 44 MAGs from S15:
 dnds_s15 <- read.csv("../data/snps/dnds_S15_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_s15)
+
+# Boxplot for S15:
+dnds_plot_1 <- dnds_s15 %>%
+  dplyr::mutate(mag = "") %>%
+  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
+  geom_quasirandom(alpha = 0.75, size = 2.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 95%)") +
+  theme_minimal() +
+  theme(axis.line = element_line(size = 0.5),
+        axis.ticks.y.left = element_line(size = 0.5))
+dnds_plot_1
+
+# Read the selection results of S15 mapped across all samples:
+dnds_s15_is95 <- read.csv("../data/snps/dnds_S15_merged_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 dnds_s15_is97 <- read.csv("../data/snps/dnds_S15_merged_is97.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 dnds_s15_is98 <- read.csv("../data/snps/dnds_S15_merged_is98.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Boxplot for each dataset
-dnds_plot_1 <- dnds_s15 %>%
-  #dplyr::mutate(mag = "mag") %>%
-  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
-  geom_boxplot(fill = NA, outlier.size = 0) +
-  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
-  #geom_quasirandom(alpha = 0.5, size = 2) +
-  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 95%)") +
-  guides(color = "none") +
+# Boxplot across samples/ANI:
+dnds_plot_2 <- dnds_s15_is95 %>%
+  dplyr::mutate(mag = "") %>%
+  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
+  geom_quasirandom(alpha = 0.75, size = 2.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  labs(x = "", y = "Global dN/dS ratios", title = "S15 at ANI 95%") +
   theme_minimal() +
   theme(axis.line = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+        axis.ticks.y.left = element_line(size = 0.5))
 
-dnds_plot_2 <- dnds_s15_is97 %>%
-  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
-  geom_boxplot(fill = NA, outlier.size = 0) +
-  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
-  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 97%)") +
-  guides(color = "none") +
+dnds_plot_3 <- dnds_s15_is97 %>%
+  dplyr::mutate(mag = "") %>%
+  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
+  geom_quasirandom(alpha = 0.75, size = 2.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  labs(x = "", y = "Global dN/dS ratios", title = "S15 at ANI 97%") +
   theme_minimal() +
   theme(axis.line = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+        axis.ticks.y.left = element_line(size = 0.5))
 
-dnds_plot_3 <- dnds_s15_is98 %>%
-  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
-  geom_boxplot(fill = NA, outlier.size = 0) +
-  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
-  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 98%)") +
-  guides(color = "none") +
+dnds_plot_4 <- dnds_s15_is98 %>%
+  dplyr::mutate(mag = "") %>%
+  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
+  geom_quasirandom(alpha = 0.75, size = 2.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  labs(x = "", y = "Global dN/dS ratios", title = "S15 at ANI 98%") +
   theme_minimal() +
   theme(axis.line = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+        axis.ticks.y.left = element_line(size = 0.5))
 
-## We merge and show them
-dnds_plot_1 + dnds_plot_2 + dnds_plot_3
+# We merge and show them
+(dnds_plot_2 + dnds_plot_3 + dnds_plot_4) + plot_layout(guides = "collect")
 ```
 
-We do observe that the selection pressure tends to increase at higher ANI percentages.
+First, we do observe that mapping the S15 sample alone gives global dN/dS ratios below 1 (i.e., MAGs evolve under purifying selection). This selection pressure tends to increase when mapping the S15 MAGs across all samples (after dereplication, n = 26 MAGs), and at higher ANI percentages (97-98%).
