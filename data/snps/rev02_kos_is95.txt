@@ -1,0 +1,449 @@
+KO	KO_definition	sum_ko	score_avg	dNdS
+K00955	bifunctional enzyme CysN/CysC [EC:2.7.7.4 2.7.1.25]	96	737	NS
+K02199	cytochrome c biogenesis protein CcmG, thiol:disulfide interchange protein DsbE	427	122.2	NS
+K02379	FdhD protein	153	74.87	NS
+K02426	cysteine desulfuration protein SufE	48	103.37	NS
+K02588	nitrogenase iron protein NifH	22	369.57	NS
+K03539	ribonuclease P/MRP protein subunit RPP1 [EC:3.1.26.5]	1	22.17	NS
+K03798	cell division protease FtsH [EC:3.4.24.-]	255	754.83	NS
+K03805	thiol:disulfide interchange protein DsbG	45	106.33	NS
+K03981	thiol:disulfide interchange protein DsbC [EC:5.3.4.1]	34	112.5	NS
+K04087	modulator of FtsH protease HflC	76	176.6	NS
+K04088	modulator of FtsH protease HflK	80	171.97	NS
+K06202	iron-sulfur cluster assembly protein CyaY	23	95.43	NS
+K06203	CysZ protein	33	57.53	NS
+K11312	cupin 2 domain-containing protein	5	36.8	NS
+K12267	peptide methionine sulfoxide reductase msrA/msrB [EC:1.8.4.11 1.8.4.12]	24	293.6	NS
+K13283	ferrous-iron efflux pump FieF	106	189.97	NS
+K13638	MerR family transcriptional regulator, Zn(II)-responsive regulator of zntA	4	154.9	NS
+K13639	MerR family transcriptional regulator, redox-sensitive transcriptional activator SoxR	42	100.63	NS
+K14058	tRNA 2-thiocytidine biosynthesis protein TtcA	43	179.07	NS
+K17225	sulfane dehydrogenase subunit SoxC	18	452.13	NS
+K19342	copper chaperone NosL	21	72.93	NS
+K19416	modulator of FtsH protease	44	176.93	NS
+K21140	[CysO sulfur-carrier protein]-S-L-cysteine hydrolase [EC:3.13.1.6]	91	112.07	NS
+K21142	MoaE-MoaD fusion protein [EC:2.8.1.12]	40	207.43	NS
+K21148	[CysO sulfur-carrier protein]-thiocarboxylate-dependent cysteine synthase [EC:2.5.1.113]	55	393.33	NS
+K21307	sulfite dehydrogenase (quinone) subunit SoeA [EC:1.8.5.6]	23	428.53	NS
+K21308	sulfite dehydrogenase (quinone) subunit SoeB	22	265.93	NS
+K21309	sulfite dehydrogenase (quinone) subunit SoeC	22	133.27	NS
+K21600	CsoR family transcriptional regulator, copper-sensing transcriptional repressor	171	83	NS
+K22068	iron-sulfur cluster assembly enzyme ISCU, mitochondrial	2	279.2	NS
+K00075	UDP-N-acetylmuramate dehydrogenase [EC:1.3.1.98]	215	65.6	PS
+K00433	non-heme chloroperoxidase [EC:1.11.1.10]	49	197.1	PS
+K00435	hydrogen peroxide-dependent heme synthase [EC:1.3.98.5]	18	249.9	PS
+K00677	UDP-N-acetylglucosamine acyltransferase [EC:2.3.1.129]	147	203.7	PS
+K00694	cellulose synthase (UDP-forming) [EC:2.4.1.12]	25	561.6	PS
+K00790	UDP-N-acetylglucosamine 1-carboxyvinyltransferase [EC:2.5.1.7]	234	172.07	PS
+K00972	UDP-N-acetylglucosamine/UDP-N-acetylgalactosamine diphosphorylase [EC:2.7.7.23 2.7.7.83]	8	394.27	PS
+K00974	tRNA nucleotidyltransferase (CCA-adding enzyme) [EC:2.7.7.72 3.1.3.- 3.1.4.-]	88	296.47	PS
+K00986	RNA-directed DNA polymerase [EC:2.7.7.49]	156	89.87	PS
+K01548	potassium-transporting ATPase KdpC subunit	169	49	PS
+K01784	UDP-glucose 4-epimerase [EC:5.1.3.2]	285	261.03	PS
+K01791	UDP-N-acetylglucosamine 2-epimerase (non-hydrolysing) [EC:5.1.3.14]	54	429.2	PS
+K01798	Alr-MurF fusion protein [EC:5.1.1.1 6.3.2.10]	20	594.7	PS
+K01854	UDP-galactopyranose mutase [EC:5.4.99.9]	46	81.53	PS
+K01924	UDP-N-acetylmuramate--alanine ligase [EC:6.3.2.8]	222	375.47	PS
+K01925	UDP-N-acetylmuramoylalanine--D-glutamate ligase [EC:6.3.2.9]	185	374.23	PS
+K01928	UDP-N-acetylmuramoyl-L-alanyl-D-glutamate--2,6-diaminopimelate ligase [EC:6.3.2.13]	228	405.5	PS
+K01929	UDP-N-acetylmuramoyl-tripeptide--D-alanyl-D-alanine ligase [EC:6.3.2.10]	183	319.53	PS
+K01971	bifunctional non-homologous end joining protein LigD [EC:6.5.1.1]	255	204.73	PS
+K01974	RNA 3'-terminal phosphate cyclase (ATP) [EC:6.5.1.4]	9	201.8	PS
+K01975	RNA 2',3'-cyclic 3'-phosphodiesterase [EC:3.1.4.58]	136	59.8	PS
+K02068	UDP-glucose/iron transport system ATP-binding protein	16	241.23	PS
+K02069	UDP-glucose/iron transport system permease protein	31	51.83	PS
+K02099	AraC family transcriptional regulator, arabinose operon regulatory protein	5	172.53	PS
+K02167	TetR/AcrR family transcriptional regulator, transcriptional repressor of bet genes	17	124.6	PS
+K02171	BlaI family transcriptional regulator, penicillinase repressor	224	46.4	PS
+K02172	bla regulator protein blaR1	80	69.07	PS
+K02193	heme exporter protein A [EC:7.6.2.5]	113	192.87	PS
+K02194	heme exporter protein B	160	51.4	PS
+K02195	heme exporter protein C	164	111.17	PS
+K02196	heme exporter protein D	38	26.7	PS
+K02197	cytochrome c-type biogenesis protein CcmE	171	39.5	PS
+K02198	cytochrome c-type biogenesis protein CcmF	155	475.5	PS
+K02257	heme o synthase [EC:2.5.1.141]	252	123.83	PS
+K02259	heme a synthase [EC:1.17.99.9]	202	61.7	PS
+K02392	flagellar basal-body rod protein FlgG	83	299.4	PS
+K02401	flagellar biosynthesis protein FlhB	108	371.97	PS
+K02405	RNA polymerase sigma factor FliA	162	182.9	PS
+K02408	flagellar hook-basal body complex protein FliE	122	32.53	PS
+K02409	flagellar M-ring protein FliF	125	128.67	PS
+K02411	flagellar assembly protein FliH	83	74.5	PS
+K02429	MFS transporter, FHS family, L-fucose permease	66	150	PS
+K02472	UDP-N-acetyl-D-mannosaminuronic acid dehydrogenase [EC:1.1.1.336]	11	459.93	PS
+K02473	UDP-N-acetylglucosamine/UDP-N-acetylgalactosamine 4-epimerase [EC:5.1.3.7 5.1.3.-]	7	438.4	PS
+K02474	UDP-N-acetyl-D-glucosamine/UDP-N-acetyl-D-galactosamine dehydrogenase [EC:1.1.1.136 1.1.1.-]	29	463.57	PS
+K02483	two-component system, OmpR family, response regulator	1410	237.33	PS
+K02484	two-component system, OmpR family, sensor kinase [EC:2.7.13.3]	221	311.93	PS
+K02494	outer membrane lipoprotein LolB	37	42.23	PS
+K02498	HemY protein	47	128.83	PS
+K02499	tetrapyrrole methylase family protein / MazG family protein	47	378.13	PS
+K02501	imidazole glycerol-phosphate synthase subunit HisH [EC:4.3.2.10]	190	238	PS
+K02535	UDP-3-O-[3-hydroxymyristoyl] N-acetylglucosamine deacetylase [EC:3.5.1.108]	118	313.6	PS
+K02536	UDP-3-O-[3-hydroxymyristoyl] glucosamine N-acyltransferase [EC:2.3.1.191]	149	180.23	PS
+K02558	UDP-N-acetylmuramate: L-alanyl-gamma-D-glutamyl-meso-diaminopimelate ligase [EC:6.3.2.45]	70	379.27	PS
+K02563	UDP-N-acetylglucosamine--N-acetylmuramyl-(pentapeptide) pyrophosphoryl-undecaprenol N-acetylglucosamine transferase [EC:2.4.1.227]	212	186.43	PS
+K02601	transcription termination/antitermination protein NusG	177	102.1	PS
+K02613	ring-1,2-phenylacetyl-CoA epoxidase subunit PaaE	40	362.4	PS
+K02624	IclR family transcriptional regulator, pca regulon regulatory protein	51	230.2	PS
+K02840	UDP-D-galactose:(glucosyl)LPS alpha-1,6-D-galactosyltransferase [EC:2.4.1.-]	2	258.53	PS
+K02844	UDP-glucose:(heptosyl)LPS alpha-1,3-glucosyltransferase [EC:2.4.1.-]	17	212.63	PS
+K02851	UDP-GlcNAc:undecaprenyl-phosphate/decaprenyl-phosphate GlcNAc-1-phosphate transferase [EC:2.7.8.33 2.7.8.35]	130	229.97	PS
+K02860	16S rRNA processing protein RimM	201	35.73	PS
+K03013	DNA-directed RNA polymerases I, II, and III subunit RPABC1	1	106.4	PS
+K03040	DNA-directed RNA polymerase subunit alpha [EC:2.7.7.6]	225	52.07	PS
+K03041	DNA-directed RNA polymerase subunit A' [EC:2.7.7.6]	13	1101	PS
+K03042	DNA-directed RNA polymerase subunit A" [EC:2.7.7.6]	15	491.7	PS
+K03043	DNA-directed RNA polymerase subunit beta [EC:2.7.7.6]	144	591.43	PS
+K03046	DNA-directed RNA polymerase subunit beta' [EC:2.7.7.6]	153	973.97	PS
+K03047	DNA-directed RNA polymerase subunit D [EC:2.7.7.6]	13	240.2	PS
+K03048	DNA-directed RNA polymerase subunit delta	2	44.33	PS
+K03049	DNA-directed RNA polymerase subunit E' [EC:2.7.7.6]	15	176.47	PS
+K03051	DNA-directed RNA polymerase subunit F [EC:2.7.7.6]	10	55.3	PS
+K03053	DNA-directed RNA polymerase subunit H [EC:2.7.7.6]	3	96.17	PS
+K03055	DNA-directed RNA polymerase subunit K [EC:2.7.7.6]	10	88.13	PS
+K03058	DNA-directed RNA polymerase subunit N [EC:2.7.7.6]	6	100.93	PS
+K03060	DNA-directed RNA polymerase subunit omega [EC:2.7.7.6]	191	22.03	PS
+K03086	RNA polymerase primary sigma factor	166	457	PS
+K03087	RNA polymerase nonessential primary-like sigma factor	12	418.3	PS
+K03088	RNA polymerase sigma-70 factor, ECF subfamily	1711	97.23	PS
+K03089	RNA polymerase sigma-32 factor	85	257.6	PS
+K03090	RNA polymerase sigma-B factor	85	267.8	PS
+K03091	RNA polymerase sigma-E/F/G factor	18	179.27	PS
+K03092	RNA polymerase sigma-54 factor	151	80.47	PS
+K03116	sec-independent protein translocase protein TatA	251	57.03	PS
+K03117	sec-independent protein translocase protein TatB	93	76.23	PS
+K03120	transcription initiation factor TFIID TATA-box-binding protein	16	38.47	PS
+K03200	type IV secretion system protein VirB5	5	61.4	PS
+K03203	type IV secretion system protein VirB8	10	145.13	PS
+K03210	preprotein translocase subunit YajC	190	35.23	PS
+K03214	RNA methyltransferase, TrmH family [EC:2.1.1.-]	12	213.1	PS
+K03217	YidC/Oxa1 family membrane protein insertase	223	116.3	PS
+K03269	UDP-2,3-diacylglucosamine hydrolase [EC:3.6.1.54]	122	65.57	PS
+K03292	glycoside/pentoside/hexuronide:cation symporter, GPH family	27	345.37	PS
+K03413	two-component system, chemotaxis family, chemotaxis protein CheY	156	139.13	PS
+K03437	RNA methyltransferase, TrmH family	151	213.67	PS
+K03466	DNA segregation ATPase FtsK/SpoIIIE, S-DNA-T family	297	58.27	PS
+K03497	ParB family transcriptional regulator, chromosome partitioning protein	360	54.23	PS
+K03524	BirA family transcriptional regulator, biotin operon repressor / biotin---[acetyl-CoA-carboxylase] ligase [EC:6.3.4.15]	196	155.9	PS
+K03550	holliday junction DNA helicase RuvA [EC:5.6.2.4]	225	47.9	PS
+K03553	recombination protein RecA	224	96.2	PS
+K03555	DNA mismatch repair protein MutS	151	679.87	PS
+K03559	biopolymer transport protein ExbD	452	27.47	PS
+K03562	biopolymer transport protein TolQ	83	250.47	PS
+K03576	LysR family transcriptional regulator, regulator for metE and metH	19	222.2	PS
+K03577	TetR/AcrR family transcriptional regulator, acrAB operon repressor	4	237.6	PS
+K03584	DNA repair protein RecO (recombination protein O)	216	39.57	PS
+K03586	cell division protein FtsL	127	43	PS
+K03587	cell division protein FtsI (penicillin-binding protein 3) [EC:3.4.16.4]	216	455.93	PS
+K03589	cell division protein FtsQ	189	45.8	PS
+K03591	cell division protein FtsN	4	76.13	PS
+K03592	PmbA protein	135	304.97	PS
+K03603	GntR family transcriptional regulator, negative regulator for fad regulon and positive regulator of fabA	1	198.33	PS
+K03625	transcription antitermination protein NusB	220	91.33	PS
+K03628	transcription termination factor Rho	205	199.13	PS
+K03629	DNA replication and repair protein RecF	150	115.23	PS
+K03641	TolB protein	142	131.7	PS
+K03656	ATP-dependent DNA helicase Rep [EC:5.6.2.4]	25	760.4	PS
+K03686	molecular chaperone DnaJ	299	409.57	PS
+K03687	molecular chaperone GrpE	274	32.23	PS
+K03690	ubiquinone biosynthesis accessory factor UbiJ	41	75.13	PS
+K03696	ATP-dependent Clp protease ATP-binding subunit ClpC	110	1083.83	PS
+K03711	Fur family transcriptional regulator, ferric uptake regulator	96	145.33	PS
+K03718	Lrp/AsnC family transcriptional regulator, regulator for asnA, asnC and gidA	39	148.13	PS
+K03719	Lrp/AsnC family transcriptional regulator, leucine-responsive regulatory protein	268	129.13	PS
+K03727	ATP-dependent RNA helicase HelY [EC:3.6.4.-]	50	789.93	PS
+K03732	ATP-dependent RNA helicase RhlB [EC:3.6.4.13]	14	521.7	PS
+K03733	integrase/recombinase XerC	89	327.6	PS
+K03744	LemA protein	123	28.33	PS
+K03771	peptidyl-prolyl cis-trans isomerase SurA [EC:5.2.1.8]	103	207.97	PS
+K03775	FKBP-type peptidyl-prolyl cis-trans isomerase SlyD [EC:5.2.1.8]	45	151.43	PS
+K03799	heat shock protein HtpX [EC:3.4.24.-]	212	134.2	PS
+K04033	AraC family transcriptional regulator, ethanolamine operon transcriptional activator	18	137.97	PS
+K04042	bifunctional UDP-N-acetylglucosamine pyrophosphorylase / glucosamine-1-phosphate N-acetyltransferase [EC:2.7.7.23 2.3.1.157]	190	319.63	PS
+K04080	molecular chaperone IbpA	35	193.5	PS
+K04479	DNA polymerase IV (archaeal DinB-like DNA polymerase) [EC:2.7.7.7]	1	407.4	PS
+K04483	DNA repair protein RadA	15	426.7	PS
+K04485	DNA repair protein RadA/Sms	178	93.87	PS
+K04651	hydrogenase nickel incorporation protein HypA/HybF	218	37.43	PS
+K04652	hydrogenase nickel incorporation protein HypB	71	115.63	PS
+K04654	hydrogenase expression/formation protein HypD	103	208.23	PS
+K04656	hydrogenase maturation protein HypF	99	158.07	PS
+K04757	serine/threonine-protein kinase RsbW [EC:2.7.11.1]	405	52.83	PS
+K04760	transcription elongation factor GreB	43	191.43	PS
+K04763	integrase/recombinase XerD	154	291.3	PS
+K04768	acetoin utilization protein AcuC	52	364.8	PS
+K05499	LacI family transcriptional regulator, repressor for deo operon, udp, cdd, tsx, nupC, and nupG	4	394.5	PS
+K05501	TetR/AcrR family transcriptional regulator	26	127.43	PS
+K05527	BolA family transcriptional regulator, general stress-responsive regulator	85	71.63	PS
+K05590	ATP-dependent RNA helicase SrmB [EC:3.6.4.13]	18	489	PS
+K05591	ATP-dependent RNA helicase DbpA [EC:3.6.4.13]	22	526.07	PS
+K05592	ATP-dependent RNA helicase DeaD [EC:3.6.4.13]	158	531.8	PS
+K05800	Lrp/AsnC family transcriptional regulator, cysteine-sensing transcriptional activator	15	199.47	PS
+K05801	DnaJ like chaperone protein	27	90.47	PS
+K05807	outer membrane protein assembly factor BamD	137	69.4	PS
+K05818	IclR family transcriptional regulator, mhp operon transcriptional activator	4	176.1	PS
+K05881	phosphoenolpyruvate---glycerone phosphotransferase subunit DhaM [EC:2.7.1.121]	15	84.8	PS
+K06020	energy-dependent translational throttle protein EttA	124	677.27	PS
+K06118	UDP-sulfoquinovose synthase [EC:3.13.1.1]	89	335	PS
+K06186	outer membrane protein assembly factor BamE	39	65.03	PS
+K06187	recombination protein RecR	223	121.63	PS
+K06194	lipoprotein NlpD	63	156.87	PS
+K06204	RNA polymerase-binding transcription factor	399	37.5	PS
+K06285	transcription attenuation protein (tryptophan RNA-binding attenuator protein)	2	80.37	PS
+K06860	putative heme uptake system protein	4	124.47	PS
+K06877	DEAD/DEAH box helicase domain-containing protein	71	279.1	PS
+K06881	bifunctional oligoribonuclease and PAP phosphatase NrnA [EC:3.1.3.7 3.1.13.3]	80	203.73	PS
+K06925	tRNA threonylcarbamoyladenosine biosynthesis protein TsaE	219	63.5	PS
+K06961	ribosomal RNA assembly protein	9	67.73	PS
+K06980	tRNA-modifying protein YgfZ	119	196.77	PS
+K06994	putative drug exporter of the RND superfamily	231	263.53	PS
+K07062	toxin FitB [EC:3.1.-.-]	99	104.23	PS
+K07145	heme oxygenase (staphylobilin-producing) [EC:1.14.99.48]	4	75.93	PS
+K07154	serine/threonine-protein kinase HipA [EC:2.7.11.1]	221	35.3	PS
+K07171	mRNA interferase MazF [EC:3.1.-.-]	411	21.13	PS
+K07172	antitoxin MazE	59	46.5	PS
+K07183	two-component system, response regulator / RNA-binding antiterminator	33	173.27	PS
+K07215	heme oxygenase (biliverdin-IX-beta and delta-forming) [EC:1.14.99.58]	2	98.73	PS
+K07226	heme oxygenase (biliverdin-IX-beta and delta-forming) [EC:1.14.99.58]	40	76.43	PS
+K07227	heme iron utilization protein	1	184.7	PS
+K07258	serine-type D-Ala-D-Ala carboxypeptidase (penicillin-binding protein 5/6) [EC:3.4.16.4]	237	225.87	PS
+K07259	serine-type D-Ala-D-Ala carboxypeptidase/endopeptidase (penicillin-binding protein 4) [EC:3.4.16.4 3.4.21.-]	121	102.27	PS
+K07260	zinc D-Ala-D-Ala carboxypeptidase [EC:3.4.17.14]	22	64.3	PS
+K07262	serine-type D-Ala-D-Ala endopeptidase (penicillin-binding protein 7) [EC:3.4.21.-]	25	297.63	PS
+K07334	toxin HigB-1	240	65.83	PS
+K07403	membrane-bound serine protease (ClpP class)	92	116.67	PS
+K07456	DNA mismatch repair protein MutS2	78	282.8	PS
+K07491	REP-associated tyrosine transposase	281	16.23	PS
+K07506	AraC family transcriptional regulator	62	140.37	PS
+K07544	benzylsuccinate CoA-transferase BbsF subunit [EC:2.8.3.15]	56	461.77	PS
+K07558	tRNA nucleotidyltransferase (CCA-adding enzyme) [EC:2.7.7.72]	15	289.47	PS
+K07559	putative RNA 2'-phosphotransferase [EC:2.7.1.-]	19	140.53	PS
+K07569	RNA-binding protein	3	51.1	PS
+K07571	S1 RNA binding domain protein	7	150.07	PS
+K07574	RNA-binding protein	30	36.73	PS
+K07580	Zn-ribbon RNA-binding protein	2	49.1	PS
+K07581	RNA-binding protein	1	59.83	PS
+K07636	two-component system, OmpR family, phosphate regulon sensor histidine kinase PhoR [EC:2.7.13.3]	204	308.83	PS
+K07637	two-component system, OmpR family, sensor histidine kinase PhoQ [EC:2.7.13.3]	27	235.47	PS
+K07638	two-component system, OmpR family, osmolarity sensor histidine kinase EnvZ [EC:2.7.13.3]	63	331.77	PS
+K07640	two-component system, OmpR family, sensor histidine kinase CpxA [EC:2.7.13.3]	9	401.5	PS
+K07641	two-component system, OmpR family, sensor histidine kinase CreC [EC:2.7.13.3]	6	325.53	PS
+K07642	two-component system, OmpR family, sensor histidine kinase BaeS [EC:2.7.13.3]	6	358.13	PS
+K07644	two-component system, OmpR family, heavy metal sensor histidine kinase CusS [EC:2.7.13.3]	82	384.97	PS
+K07645	two-component system, OmpR family, sensor histidine kinase QseC [EC:2.7.13.3]	9	439.2	PS
+K07646	two-component system, OmpR family, sensor histidine kinase KdpD [EC:2.7.13.3]	508	234.93	PS
+K07648	two-component system, OmpR family, aerobic respiration control sensor histidine kinase ArcB [EC:2.7.13.3]	2	561.1	PS
+K07649	two-component system, OmpR family, sensor histidine kinase TctE [EC:2.7.13.3]	26	414.17	PS
+K07650	two-component system, OmpR family, sensor histidine kinase CssS [EC:2.7.13.3]	1	257.03	PS
+K07652	two-component system, OmpR family, sensor histidine kinase VicK [EC:2.7.13.3]	8	465.73	PS
+K07653	two-component system, OmpR family, sensor histidine kinase MprB [EC:2.7.13.3]	42	367.63	PS
+K07654	two-component system, OmpR family, sensor histidine kinase MtrB [EC:2.7.13.3]	38	327.4	PS
+K07657	two-component system, OmpR family, phosphate regulon response regulator PhoB	77	304.2	PS
+K07658	two-component system, OmpR family, alkaline phosphatase synthesis response regulator PhoP	8	339.87	PS
+K07659	two-component system, OmpR family, phosphate regulon response regulator OmpR	18	335.07	PS
+K07660	two-component system, OmpR family, response regulator PhoP	16	289.07	PS
+K07661	two-component system, OmpR family, response regulator RstA	1	313.37	PS
+K07662	two-component system, OmpR family, response regulator CpxR	16	291.17	PS
+K07663	two-component system, OmpR family, catabolic regulation response regulator CreB	6	271.43	PS
+K07664	two-component system, OmpR family, response regulator BaeR	3	283.2	PS
+K07665	two-component system, OmpR family, copper resistance phosphate regulon response regulator CusR	60	323.43	PS
+K07666	two-component system, OmpR family, response regulator QseB	13	302.93	PS
+K07667	two-component system, OmpR family, KDP operon response regulator KdpE	390	285.3	PS
+K07668	two-component system, OmpR family, response regulator VicR	3	336.13	PS
+K07669	two-component system, OmpR family, response regulator MprA	102	324.9	PS
+K07670	two-component system, OmpR family, response regulator MtrA	24	310.23	PS
+K07673	two-component system, NarL family, nitrate/nitrite sensor histidine kinase NarX [EC:2.7.13.3]	12	489.57	PS
+K07682	two-component system, NarL family, sensor histidine kinase DevS [EC:2.7.13.3]	52	214.27	PS
+K07692	two-component system, NarL family, response regulator DegU	19	260.7	PS
+K07695	two-component system, NarL family, response regulator DevR	68	247.17	PS
+K07714	two-component system, NtrC family, response regulator AtoC	81	562.87	PS
+K07738	transcriptional repressor NrdR	199	43.87	PS
+K07768	two-component system, OmpR family, sensor histidine kinase SenX3 [EC:2.7.13.3]	45	349.6	PS
+K07772	two-component system, OmpR family, torCAD operon response regulator TorR	2	299	PS
+K07774	two-component system, OmpR family, response regulator TctD	19	290.4	PS
+K07775	two-component system, OmpR family, response regulator ResD	7	311.1	PS
+K07776	two-component system, OmpR family, response regulator RegX3	114	318.1	PS
+K08068	UDP-N-acetylglucosamine 2-epimerase (hydrolysing) [EC:3.2.1.183]	2	436.83	PS
+K08174	MFS transporter, FHS family, glucose/mannose:H+ symporter	16	204.13	PS
+K08225	MFS transporter, ENTS family, enterobactin (siderophore) exporter	65	251.2	PS
+K08482	circadian clock protein KaiC	132	131.7	PS
+K08484	phosphotransferase system, enzyme I, PtsP [EC:2.7.3.9]	43	690.03	PS
+K08640	zinc D-Ala-D-Ala carboxypeptidase [EC:3.4.17.14]	10	60.87	PS
+K08641	zinc D-Ala-D-Ala dipeptidase [EC:3.4.13.22]	43	53.93	PS
+K08678	UDP-glucuronate decarboxylase [EC:4.1.1.35]	36	508.37	PS
+K08679	UDP-glucuronate 4-epimerase [EC:5.1.3.6]	73	361.5	PS
+K09017	TetR/AcrR family transcriptional regulator	53	124.53	PS
+K09539	DnaJ homolog subfamily C member 19	8	76.47	PS
+K09748	ribosome maturation factor RimP	188	26.67	PS
+K09762	cell division protein WhiA	34	95.33	PS
+K09806	ubiquinone biosynthesis accessory factor UbiK	59	34.5	PS
+K09823	Fur family transcriptional regulator, zinc uptake regulator	35	99	PS
+K09825	Fur family transcriptional regulator, peroxide stress response regulator	11	158.97	PS
+K09826	Fur family transcriptional regulator, iron response regulator	28	113.1	PS
+K09882	cobaltochelatase CobS [EC:6.6.1.2]	29	175.63	PS
+K09883	cobaltochelatase CobT [EC:6.6.1.2]	36	124.17	PS
+K09949	UDP-2,3-diacylglucosamine hydrolase [EC:3.6.1.54]	66	115.8	PS
+K10715	two-component system, sensor histidine kinase RpfC [EC:2.7.13.3]	16	628.3	PS
+K10726	replicative DNA helicase Mcm [EC:5.6.2.3]	16	643.27	PS
+K10778	AraC family transcriptional regulator, regulatory protein of adaptative response / methylated-DNA-[protein]-cysteine methyltransferase [EC:2.1.1.63]	99	208.2	PS
+K10834	heme transport system ATP-binding protein [EC:7.6.2.5]	4	311.33	PS
+K10913	TetR/AcrR family transcriptional regulator, hemagglutinin/protease regulatory protein	2	167.33	PS
+K10924	MSHA pilin protein MshA	13	119	PS
+K10925	MSHA pilin protein MshB	4	118.27	PS
+K10926	MSHA pilin protein MshC	17	82.73	PS
+K10927	MSHA pilin protein MshD	20	69.53	PS
+K10979	DNA end-binding protein Ku	108	105.53	PS
+K11329	two-component system, OmpR family, response regulator RpaB	1	319.47	PS
+K11355	two-component system, chemotaxis family, response regulator Rcp1	21	172.83	PS
+K11618	two-component system, NarL family, response regulator LiaR	8	272.97	PS
+K11690	C4-dicarboxylate transporter, DctM subunit	145	110.17	PS
+K11751	5'-nucleotidase / UDP-sugar diphosphatase [EC:3.1.3.5 3.6.1.45]	3	471.43	PS
+K11927	ATP-dependent RNA helicase RhlE [EC:3.6.4.13]	148	554.2	PS
+K12056	conjugal transfer mating pair stabilization protein TraG	17	89.1	PS
+K12071	conjugal transfer pilus assembly protein TraD	8	271.33	PS
+K12152	phosphatase NudJ [EC:3.6.1.-]	28	92.33	PS
+K12210	intracellular multiplication protein IcmF	1	1488.77	PS
+K12243	AraC family transcriptional regulator, transcriptional activator of the genes for pyochelin and ferripyochelin receptors	5	191.63	PS
+K12276	MSHA biogenesis protein MshE	17	728.57	PS
+K12278	MSHA biogenesis protein MshG	16	468.37	PS
+K12279	MSHA biogenesis protein MshI	17	140.47	PS
+K12280	MSHA biogenesis protein MshJ	16	103.43	PS
+K12281	MSHA biogenesis protein MshK	17	49.1	PS
+K12282	MSHA biogenesis protein MshL	24	380.67	PS
+K12283	MSHA biogenesis protein MshM	23	367.63	PS
+K12284	MSHA biogenesis protein MshN	17	100.73	PS
+K12285	MSHA biogenesis protein MshO	11	78.73	PS
+K12286	MSHA biogenesis protein MshP	12	53.57	PS
+K12287	MSHA biogenesis protein MshQ	11	177.57	PS
+K12449	UDP-apiose/xylose synthase	1	303.13	PS
+K12962	undecaprenyl phosphate-alpha-L-ara4N flippase subunit ArnE	5	82.37	PS
+K13015	UDP-N-acetyl-D-glucosamine dehydrogenase [EC:1.1.1.136]	74	449.53	PS
+K13016	UDP-N-acetyl-2-amino-2-deoxyglucuronate dehydrogenase [EC:1.1.1.335]	2	333.37	PS
+K13017	UDP-2-acetamido-2-deoxy-ribo-hexuluronate aminotransferase [EC:2.6.1.98]	61	463.73	PS
+K13018	UDP-2-acetamido-3-amino-2,3-dideoxy-glucuronate N-acetyltransferase [EC:2.3.1.201]	41	137.77	PS
+K13019	UDP-GlcNAc3NAcA epimerase [EC:5.1.3.23]	5	473.37	PS
+K13020	UDP-N-acetyl-2-amino-2-deoxyglucuronate dehydrogenase [EC:1.1.1.335]	58	252.47	PS
+K13256	protein PsiE	52	28.23	PS
+K13529	AraC family transcriptional regulator, regulatory protein of adaptative response / DNA-3-methyladenine glycosylase II [EC:3.2.2.21]	62	335.87	PS
+K13587	two-component system, cell cycle sensor histidine kinase and response regulator CckA [EC:2.7.13.3]	325	357.67	PS
+K13633	AraC family transcriptional regulator, transcriptional activator FtrA	33	279.93	PS
+K13641	IclR family transcriptional regulator, acetate operon repressor	43	264.8	PS
+K13652	AraC family transcriptional regulator	7	207.73	PS
+K13770	TetR/AcrR family transcriptional regulator, fatty acid metabolism regulator protein	9	133.57	PS
+K13798	DNA-directed RNA polymerase subunit B [EC:2.7.7.6]	13	1504	PS
+K13924	two-component system, chemotaxis family, CheB/CheR fusion protein [EC:2.1.1.80 3.1.1.61]	59	379.13	PS
+K14056	HTH-type transcriptional regulator, repressor for puuD	7	121.67	PS
+K14063	AraC family transcriptional regulator, positive regulator of tynA and feaB	33	153.9	PS
+K14161	protein ImuB	89	214.43	PS
+K14680	putative RNA ligase [EC:6.5.1.-]	2	175.9	PS
+K14952	UDP-MurNAc hydroxylase	14	252.43	PS
+K14980	two-component system, OmpR family, sensor histidine kinase ChvG [EC:2.7.13.3]	30	316.8	PS
+K14981	two-component system, OmpR family, response regulator ChvI	28	266.27	PS
+K14982	two-component system, OmpR family, sensor histidine kinase CiaH [EC:2.7.13.3]	7	307.3	PS
+K14986	two-component system, LuxR family, sensor kinase FixL [EC:2.7.13.3]	50	333.83	PS
+K15539	cytoskeleton protein RodZ	157	58.07	PS
+K15782	Lrp/AsnC family transcriptional regulator, regulator of ectoine-degradation genes	7	164.4	PS
+K15792	MurE/MurF fusion protein [EC:6.3.2.13 6.3.2.10]	2	818.53	PS
+K15894	UDP-N-acetylglucosamine 4,6-dehydratase/5-epimerase [EC:4.2.1.115 5.1.3.-]	19	299.2	PS
+K15897	UDP-2,4-diacetamido-2,4,6-trideoxy-beta-L-altropyranose hydrolase [EC:3.6.1.57]	6	133.57	PS
+K16135	LysR family transcriptional regulator, transcriptional activator for dmlA	9	333.17	PS
+K16137	TetR/AcrR family transcriptional regulator, transcriptional repressor for nem operon	152	105.73	PS
+K16138	TetR/AcrR family transcriptional regulator, repressor for uid operon	3	156.97	PS
+K16363	UDP-3-O-[3-hydroxymyristoyl] N-acetylglucosamine deacetylase / 3-hydroxyacyl-[acyl-carrier-protein] dehydratase [EC:3.5.1.108 4.2.1.59]	9	415.27	PS
+K16697	teichuronic acid biosynthesis glycosyltransferase TuaC [EC:2.4.-.-]	22	311.07	PS
+K16869	octanoyl-[GcvH]:protein N-octanoyltransferase [EC:2.3.1.204]	8	125.47	PS
+K17247	methionine sulfoxide reductase heme-binding subunit	92	71.1	PS
+K17675	ATP-dependent RNA helicase SUPV3L1/SUV3 [EC:3.6.4.13]	29	131.17	PS
+K17713	outer membrane protein assembly factor BamB	159	158.53	PS
+K18136	TetR/AcrR family transcriptional regulator, multidrug resistance operon repressor	2	172.3	PS
+K18143	two-component system, OmpR family, sensor histidine kinase AdeS [EC:2.7.13.3]	1	296.9	PS
+K18144	two-component system, OmpR family, response regulator AdeR	1	265.6	PS
+K18294	TetR/AcrR family transcriptional regulator, mexCD-oprJ operon repressor	2	128.1	PS
+K18301	TetR/AcrR family transcriptional regulator, mexJK operon transcriptional repressor	36	170.93	PS
+K18345	two-component system, OmpR family, sensor histidine kinase VanS [EC:2.7.13.3]	1	346.63	PS
+K18349	two-component system, OmpR family, response regulator VanR	1	294.03	PS
+K18351	two-component system, OmpR family, sensor histidine kinase VanS [EC:2.7.13.3]	33	293.07	PS
+K18352	two-component system, OmpR family, response regulator VanR	7	327.5	PS
+K18429	GDP/UDP-N,N'-diacetylbacillosamine 2-epimerase (hydrolysing) [EC:3.2.1.184]	3	458.07	PS
+K18476	TetR/AcrR family transcriptional regulator, tetracycline repressor protein	65	79.93	PS
+K18828	tRNA(fMet)-specific endonuclease VapC [EC:3.1.-.-]	91	105.8	PS
+K18829	antitoxin VapB	68	37.33	PS
+K18905	TetR/AcrR family transcriptional regulator, repressor of the ameABC operon	1	138.93	PS
+K18940	two-component system, OmpR family, sensor histidine kinase ArlS [EC:2.7.13.3]	6	355.87	PS
+K18941	two-component system, OmpR family, response regulator ArlR	4	297.7	PS
+K18954	AraC family transcriptional regulator, transcriptional activator of pobA	48	147.6	PS
+K18955	WhiB family transcriptional regulator, redox-sensing transcriptional regulator	265	68.8	PS
+K18958	WhiB family transcriptional regulator, redox-sensing transcriptional regulator	30	76.73	PS
+K18988	serine-type D-Ala-D-Ala carboxypeptidase/endopeptidase [EC:3.4.16.4 3.4.21.-]	11	272.17	PS
+K18991	AraC family transcriptional regulator, activator of mtrCDE	6	266.3	PS
+K18997	chaperone modulatory protein CbpM	43	71.13	PS
+K19000	Rho-binding antiterminator	6	21.77	PS
+K19055	Ala-tRNA(Pro) deacylase [EC:3.1.1.-]	37	97.83	PS
+K19068	UDP-2-acetamido-2,6-beta-L-arabino-hexul-4-ose reductase [EC:1.1.1.367]	5	180.93	PS
+K19082	two-component system, OmpR family, response regulator protein BraR/BceR	1	310.37	PS
+K19124	CRISPR system Cascade subunit CasC	23	216.63	PS
+K19157	mRNA interferase YafQ [EC:3.1.-.-]	28	42.27	PS
+K19166	mRNA interferase HigB [EC:3.1.-.-]	56	33.17	PS
+K19242	LysR family transcriptional regulator, repressor for citA	4	227.4	PS
+K19333	IclR family transcriptional regulator, KDG regulon repressor	29	282.9	PS
+K19335	TetR/AcrR family transcriptional regulator, repressor for divergent bdcA	1	192.57	PS
+K19373	DnaJ homolog subfamily C member 28	5	88.2	PS
+K19686	ribonuclease VapC [EC:3.1.-.-]	83	62.6	PS
+K19687	antitoxin VapB	54	27.73	PS
+K19693	AraC family transcriptional regulator, chitin signaling transcriptional activator	6	259	PS
+K19736	TetR/AcrR family transcriptional regulator, regulator of autoinduction and epiphytic fitness	10	169	PS
+K19802	L-Ala-D/L-Glu epimerase / N-acetyl-D-glutamate racemase [EC:5.1.1.20 5.1.1.25]	56	297.7	PS
+K20084	UDP-N-acetyl-3-dehydro-alpha-D-glucosamine 3-aminotranferase [EC:2.6.1.122]	2	525.17	PS
+K20329	IclR family transcriptional regulator, positive regulator for flagellar biogenesis	5	226.1	PS
+K20468	putative heme transporter	95	169.8	PS
+K20469	putative heme transporter	50	206.47	PS
+K20470	trehalose monomycolate/heme transporter	1	768.4	PS
+K20487	two-component system, OmpR family, lantibiotic biosynthesis sensor histidine kinase NisK/SpaK [EC:2.7.13.3]	1	299.07	PS
+K20488	two-component system, OmpR family, lantibiotic biosynthesis response regulator NisR/SpaR	1	263.13	PS
+K20539	IclR family transcriptional regulator, blcABC operon repressor	1	237.63	PS
+K20798	small RNA 2'-O-methyltransferase [EC:2.1.1.386]	17	96.3	PS
+K20968	AraC family transcriptional regulator, exoenzyme S synthesis regulatory protein ExsA	1	145.03	PS
+K21303	UDP-GalNAc:undecaprenyl-phosphate GalNAc-1-phosphate transferase [EC:2.7.8.40]	1	350.2	PS
+K21469	serine-type D-Ala-D-Ala carboxypeptidase [EC:3.4.16.4]	1	471.07	PS
+K21480	heme oxygenase (biliverdin-producing, ferredoxin) [EC:1.14.15.20]	1	246.6	PS
+K21481	heme oxygenase (mycobilin-producing) [EC:1.14.99.57]	32	86.5	PS
+K21602	IclR family transcriptional regulator, carbohydrate utilization repressor	1	289.03	PS
+K21603	two-component system, OmpR family, flagellar system response regulator FtcR	2	290.3	PS
+K21782	L-prolyl-PCP dehydrogenase [EC:1.3.8.14]	1	504.1	PS
+K21826	AraC family transcriptional regulator, glycine betaine-responsive activator	7	437.07	PS
+K21961	TetR/AcrR family transcriptional regulator, ethionamide resistance regulator	25	115.57	PS
+K21962	TetR/AcrR family transcriptional regulator, transcriptional repressor of aconitase	3	143.97	PS
+K22010	two-component system, response regulator PdtaR	85	137.77	PS
+K22041	TetR/AcrR family transcriptional regulator, copper-responsive repressor	10	192.17	PS
+K22105	TetR/AcrR family transcriptional regulator, fatty acid biosynthesis regulator	10	82.67	PS
+K22106	TetR/AcrR family transcriptional regulator, repressor of fatR-cypB operon	4	147.93	PS
+K22107	TetR/AcrR family transcriptional regulator, cholesterol catabolism regulator	24	102.5	PS
+K22108	TetR/AcrR family transcriptional regulator, cholesterol catabolism regulator	94	144.57	PS
+K22227	AdoMet-dependent heme synthase [EC:1.3.98.6]	75	364.77	PS
+K22295	TetR/AcrR family transcriptional regulator, repressor for neighboring sulfatase	2	109.27	PS
+K22297	Fur family transcriptional regulator, stress-responsive regulator	45	135.83	PS
+K22486	transcriptional regulator HilA, main transcriptional regulator of SPI1	3	216.57	PS
+K22622	S-disulfanyl-L-cysteine oxidoreductase SoxD [EC:1.8.2.6]	19	145.93	PS
+K22843	ETFB lysine methyltransferase [EC:2.1.1.-]	26	109.13	PS
+K23169	UDP-N-acetylmuramoyl-L-alanine---L-glutamate ligase [EC:6.3.2.53]	11	403.3	PS
+K23170	UDP-N-acetyl-alpha-D-muramoyl-L-alanyl-L-glutamate epimerase [EC:5.1.1.23]	19	317.87	PS
+K23238	RpiR family transcriptional regulator, repressor of rpiB and als operon	1	310.37	PS
+K23264	phosphoribosylformylglycinamidine synthase subunit PurS [EC:6.3.5.3]	161	38.77	PS
+K23265	phosphoribosylformylglycinamidine synthase subunit PurQ / glutaminase [EC:6.3.5.3 3.5.1.2]	187	211.23	PS
+K23269	phosphoribosylformylglycinamidine synthase subunit PurL [EC:6.3.5.3]	147	728.3	PS
+K23514	RNA polymerase sigma-19 factor, ECF subfamily	14	136.87	PS
+K23777	TetR/AcrR family transcriptional regulator, regulator of cefoperazone and chloramphenicol sensitivity	12	130.37	PS
+K23778	TetR/AcrR family transcriptional regulator, regulator of biofilm formation and stress response	8	111.5	PS
+K24073	RNA polymerase sigma factor CnrH	6	188.83	PS
+K24258	UDP-N-acetyl-L-fucosamine synthase [EC:5.1.3.28]	2	595.2	PS
+K24300	UDP-N-acetylglucosamine 4,6-dehydratase [EC:4.2.1.135]	13	737.27	PS
+K24310	UDP-N-acetyl-alpha-D-quinovosamine dehydrogenase [EC:1.1.1.426]	18	326.23	PS
+K24699	TetR/AcrR family transcriptional regulator, regulator of mycofactocin system	67	98.73	PS
+K24867	dihydro-heme d1 dehydrogenase	1	458	PS
+K24868	heme d1 biosynthesis protein	1	471.2	PS
+K25132	heme transport system substrate-binding protein	4	230.67	PS
+K25133	heme transport system permease protein	4	383.83	PS
+K25495	AraC family transcriptional regulator, regulator of nimT	1	260.57	PS
+K27000	RNA polymerase sigma-H factor	40	106.3	PS
