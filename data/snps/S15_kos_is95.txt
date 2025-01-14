@@ -1,0 +1,32 @@
+KO	KO_definition	sum_ko	score_avg	dNdS
+K02171	BlaI family transcriptional regulator, penicillinase repressor	241	46.4	PS
+K02230	cobaltochelatase CobN [EC:6.6.1.2]	43	1009.9	PS
+K02408	flagellar hook-basal body complex protein FliE	38	32.53	PS
+K02546	BlaI family transcriptional regulator, methicillin resistance regulatory protein	41	196.57	PS
+K03117	sec-independent protein translocase protein TatB	141	76.23	PS
+K04651	hydrogenase nickel incorporation protein HypA/HybF	317	37.43	PS
+K07171	mRNA interferase MazF [EC:3.1.-.-]	115	21.13	PS
+K07334	toxin HigB-1	99	65.83	PS
+K09806	ubiquinone biosynthesis accessory factor UbiK	36	34.5	PS
+K12267	peptide methionine sulfoxide reductase msrA/msrB [EC:1.8.4.11 1.8.4.12]	76	293.6	PS
+K13655	HTH-type transcriptional regulator / antitoxin MqsA	262	73.97	PS
+K14674	TAG lipase / steryl ester hydrolase / phospholipase A2 / LPA acyltransferase [EC:3.1.1.3 3.1.1.13 3.1.1.4 2.3.1.51]	62	517.9	PS
+K16869	octanoyl-[GcvH]:protein N-octanoyltransferase [EC:2.3.1.204]	65	125.47	PS
+K18828	tRNA(fMet)-specific endonuclease VapC [EC:3.1.-.-]	327	105.8	PS
+K19686	ribonuclease VapC [EC:3.1.-.-]	294	62.6	PS
+K23265	phosphoribosylformylglycinamidine synthase subunit PurQ / glutaminase [EC:6.3.5.3 3.5.1.2]	293	211.23	PS
+K02379	FdhD protein	315	74.87	NS
+K02426	cysteine desulfuration protein SufE	9	103.37	NS
+K03148	sulfur carrier protein ThiS adenylyltransferase [EC:2.7.7.73]	449	328.1	NS
+K05665	ATP-binding cassette, subfamily C (CFTR/MRP), member 1 [EC:7.6.2.3]	2622	1946.1	NS
+K05666	ATP-binding cassette, subfamily C (CFTR/MRP), member 2	2524	1838.23	NS
+K05674	ATP-binding cassette, subfamily C (CFTR/MRP), member 10	2648	1503.67	NS
+K06202	iron-sulfur cluster assembly protein CyaY	7	95.43	NS
+K11312	cupin 2 domain-containing protein	100	36.8	NS
+K13283	ferrous-iron efflux pump FieF	1112	189.97	NS
+K14058	tRNA 2-thiocytidine biosynthesis protein TtcA	84	179.07	NS
+K15344	secreted effector protein SseB	24	87.67	NS
+K15367	secretion system chaperone SseA	18	84.53	NS
+K21142	MoaE-MoaD fusion protein [EC:2.8.1.12]	140	207.43	NS
+K21600	CsoR family transcriptional regulator, copper-sensing transcriptional repressor	258	83	NS
+K22068	iron-sulfur cluster assembly enzyme ISCU, mitochondrial	88	279.2	NS
