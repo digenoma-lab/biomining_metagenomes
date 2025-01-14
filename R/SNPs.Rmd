@@ -689,7 +689,7 @@ dnds_s15_is98 <- read.csv("../data/snps/dnds_S15_merged_is98.txt", sep = "\t", h
 # Boxplot across samples/ANI:
 dnds_plot_2 <- dnds_s15_is95 %>%
   dplyr::mutate(mag = "") %>%
-  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  ggplot(aes(x = mag, y = dnds, color = phylum)) +
   geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
   geom_quasirandom(alpha = 0.75, size = 2.5) +
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
@@ -700,7 +700,7 @@ dnds_plot_2 <- dnds_s15_is95 %>%
 
 dnds_plot_3 <- dnds_s15_is97 %>%
   dplyr::mutate(mag = "") %>%
-  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  ggplot(aes(x = mag, y = dnds, color = phylum)) +
   geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
   geom_quasirandom(alpha = 0.75, size = 2.5) +
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
@@ -711,7 +711,7 @@ dnds_plot_3 <- dnds_s15_is97 %>%
 
 dnds_plot_4 <- dnds_s15_is98 %>%
   dplyr::mutate(mag = "") %>%
-  ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
+  ggplot(aes(x = mag, y = dnds, color = phylum)) +
   geom_boxplot(fill = NA, color = "black", outlier.size = 0) +
   geom_quasirandom(alpha = 0.75, size = 2.5) +
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
@@ -724,4 +724,4 @@ dnds_plot_4 <- dnds_s15_is98 %>%
 (dnds_plot_2 + dnds_plot_3 + dnds_plot_4) + plot_layout(guides = "collect")
 ```
 
-First, we do observe that mapping the S15 sample alone gives global dN/dS ratios below 1 (i.e., MAGs evolve under purifying selection). This selection pressure tends to increase when mapping the S15 MAGs across all samples (after dereplication, n = 26 MAGs), and at higher ANI percentages (97-98%).
+First, we do observe that mapping the S15 sample alone gives global dN/dS ratios below 1 (i.e., MAGs evolve under purifying selection). This selection pressure leads to an increase when mapping the S15 MAGs across all samples (after dereplication), and at higher ANI percentages (97-98%).

@@ -1,27 +1,45 @@
-phylum	bin	snps	dnds_sum	dnds_glob
-Acidobacteriota	SPAdes-MaxBin2Refined-S15.037_sub	613	1608.60115629699	2.62414544257258
-Acidobacteriota	SPAdes-MetaBAT2Refined-S15.38	527	602.216441022255	1.14272569453938
-Actinobacteriota	SPAdes-MaxBin2Refined-S15.034_sub	961	3519.91434839651	3.66276206909106
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.11	1579	6922.07778206288	4.38383646742424
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.19	31	103.725314607963	3.34597789057945
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.22	61	83.5532251842887	1.36972500302113
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.26	1313	5329.58598965297	4.05909062425969
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.42_sub	301	1241.0355464681	4.12304168261827
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.44_sub	288	1137.79637891057	3.95068187121724
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.49	699	2995.82585836853	4.2858739032454
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.5	82	361.567426572669	4.40935886064231
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.51	823	3419.22731523515	4.15458969044369
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.56	525	1633.17873818271	3.11081664415754
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.57	783	3222.08828545467	4.1150552815513
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.69	92	432.670184208468	4.70293678487465
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.72	487	2173.72347930454	4.46349790411609
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.73	98	388.815489972955	3.96750499972404
-Actinobacteriota	SPAdes-MetaBAT2Refined-S15.74	1185	3220.60498989231	2.71781011805259
-Dormibacterota	SPAdes-MetaBAT2Refined-S15.67	41	147.938676879488	3.60826041169483
-Firmicutes_E	SPAdes-MetaBAT2Refined-S15.13	197	794.426818845312	4.03262344591529
-Firmicutes_E	SPAdes-MetaBAT2Refined-S15.46	93	363.681160691433	3.91055011496165
-Firmicutes_E	SPAdes-MetaBAT2Refined-S15.61	160	494.316945623639	3.08948091014774
-Firmicutes_E	SPAdes-MetaBAT2Refined-S15.62	276	914.569872422313	3.31365895805186
-Nitrospirota_A	SPAdes-MaxBin2Refined-S15.043_sub	146	499.620367991726	3.42205731501182
-Proteobacteria	SPAdes-MetaBAT2Refined-S15.6	1750	4638.97091854347	2.65084052488198
-Proteobacteria	SPAdes-MetaBAT2Refined-S15.75	218	728.27158289718	3.34069533439073
+phylum	bin	dnds
+Acidobacteriota	SPAdes-MaxBin2Refined-S15.004_sub	0.292769802365571
+Acidobacteriota	SPAdes-MaxBin2Refined-S15.021_sub	0.341272066161598
+Acidobacteriota	SPAdes-MaxBin2Refined-S15.026_sub	0.261574875265611
+Acidobacteriota	SPAdes-MaxBin2Refined-S15.037_sub	2.94139079795534
+Acidobacteriota	SPAdes-MetaBAT2Refined-S15.38	1.05648102646342
+Acidobacteriota	SPAdes-MetaBAT2Refined-S15.50_sub	0.339383174024136
+Actinobacteriota	SPAdes-MaxBin2Refined-S15.034_sub	2.2873522400039
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.11	1.59433784395227
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.14	1.98584105782083
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.18	2.03516199929137
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.19	1.81991092761869
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.20	2.25579278862843
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.22	0.8544880410365
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.26	2.28812996767561
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.42_sub	1.14330681533282
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.44_sub	2.9722107167099
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.45	2.6484630583572
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.49	4.2858739032454
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.5	2.42348195134546
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.51	4.15458969044369
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.56	1.05960914803466
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.57	2.02027351775369
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.68	1.77823637030884
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.69	4.70293678487465
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.72	4.46349790411609
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.73	2.00562659803556
+Actinobacteriota	SPAdes-MetaBAT2Refined-S15.74	1.5808618691202
+Dormibacterota	SPAdes-MetaBAT2Refined-S15.67	1.59830200878904
+Firmicutes_E	SPAdes-MetaBAT2Refined-S15.13	4.03262344591529
+Firmicutes_E	SPAdes-MetaBAT2Refined-S15.46	1.93550595072123
+Firmicutes_E	SPAdes-MetaBAT2Refined-S15.61	3.08948091014774
+Firmicutes_E	SPAdes-MetaBAT2Refined-S15.62	1.8707991749524
+Nitrospirota_A	SPAdes-MaxBin2Refined-S15.001_sub	3.12694624539014
+Nitrospirota_A	SPAdes-MaxBin2Refined-S15.043_sub	4.47625129606451
+Proteobacteria	SPAdes-MaxBin2Refined-S15.010	0.315851577579256
+Proteobacteria	SPAdes-MaxBin2Refined-S15.019_sub	1.28720873986861
+Proteobacteria	SPAdes-MaxBin2Refined-S15.033_sub	0.316970645894942
+Proteobacteria	SPAdes-MaxBin2Refined-S15.057_sub	0.351798407477322
+Proteobacteria	SPAdes-MaxBin2Refined-S15.064_sub	0.523968659345644
+Proteobacteria	SPAdes-MaxBin2Refined-S15.065_sub	0.303932056844652
+Proteobacteria	SPAdes-MetaBAT2Refined-S15.15_sub	1.01373285605522
+Proteobacteria	SPAdes-MetaBAT2Refined-S15.27	0.31533437927046
+Proteobacteria	SPAdes-MetaBAT2Refined-S15.6	2.39655668868424
+Proteobacteria	SPAdes-MetaBAT2Refined-S15.75	1.5827142677337
