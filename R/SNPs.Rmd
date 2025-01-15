@@ -650,8 +650,12 @@ dnds_plot_instrain_lm <- dnds_instrain %>%
   annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
            label = paste0("R² = ", round(dnds_instrain_lm_rs, 3), 
                           "\nP-value = ", signif(dnds_instrain_lm_pv, 3))) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5))
 
+# Show:
 dnds_plot_instrain_lm
 ```
 
@@ -664,11 +668,11 @@ Next, we compared the global ratios of the 44 MAGs from S15 (at default ANI: 95%
 ```{r s15dnds}
 library(ggbeeswarm)
 
-# Read global ratios of the 44 MAGs from S15:
+# Read global ratios of the 44 MAGs from S15
 dnds_s15 <- read.csv("../data/snps/dnds_S15_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 head(dnds_s15)
 
-# Boxplot for S15:
+# Boxplot for S15
 dnds_plot_1 <- dnds_s15 %>%
   dplyr::mutate(mag = "") %>%
   ggplot(aes(x = mag, y = dnds_glob, color = phylum)) +
@@ -695,8 +699,8 @@ dnds_plot_2 <- dnds_s15_is95 %>%
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
   labs(x = "", y = "Global dN/dS ratios", title = "S15 at ANI 95%") +
   theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5))
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5))
 
 dnds_plot_3 <- dnds_s15_is97 %>%
   dplyr::mutate(mag = "") %>%
@@ -706,8 +710,8 @@ dnds_plot_3 <- dnds_s15_is97 %>%
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
   labs(x = "", y = "Global dN/dS ratios", title = "S15 at ANI 97%") +
   theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5))
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5))
 
 dnds_plot_4 <- dnds_s15_is98 %>%
   dplyr::mutate(mag = "") %>%
@@ -717,11 +721,48 @@ dnds_plot_4 <- dnds_s15_is98 %>%
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
   labs(x = "", y = "Global dN/dS ratios", title = "S15 at ANI 98%") +
   theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5))
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5))
 
 # We merge and show them
 (dnds_plot_2 + dnds_plot_3 + dnds_plot_4) + plot_layout(guides = "collect")
 ```
 
 First, we do observe that mapping the S15 sample alone gives global dN/dS ratios below 1 (i.e., MAGs evolve under purifying selection). This selection pressure leads to an increase when mapping the S15 MAGs across all samples (after dereplication), and at higher ANI percentages (97-98%).
+
+# Correlation between callers (bcftools and inStrain)
+
+```{r s15callers}
+# Read data
+dnds_comp <- read.csv("../data/snps/dnds_S15_bcf_vs_is.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_comp)
+
+# Fit a linear model
+dnds_comp_lm <- lm(dnds_bcf ~ dnds_is95, data = dnds_comp)
+
+# Extract R-squared and p-value
+dnds_comp_lm_rs <- summary(dnds_comp_lm)$r.squared
+dnds_comp_lm_pv <- summary(dnds_comp_lm)$coefficients[2, 4]
+
+# Plot model
+dnds_plot_comp <- dnds_comp %>%
+  ggplot(aes(x = dnds_bcf, y = dnds_is95, color = phylum)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue", linewidth = 0.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.25) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.25) +
+  labs(x = "dN/dS (bcftools)", y = "dN/dS (inStrain ANI 95%)", title = "S15 comparison of dN/dS") +
+  annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
+           label = paste0("R² = ", round(dnds_comp_lm_rs, 3), 
+                          "\nP-value = ", signif(dnds_comp_lm_pv, 3))) +
+  theme_minimal() +
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5))
+
+# Show:
+dnds_plot_comp
+```
+
+We observe a lack of correlation between both callers (R² = 0.049, p-value = 0.15).
