@@ -622,7 +622,42 @@ ggplot(filtered_data, aes(x = phylum, y = mutations_per_megabase, fill = phylum)
 
 There is no strong evidence that the mean number of mutations per megabase differs significantly among the phyla included in the filtered dataset.
 
-# Global dN/dS ratios
+# Correlation between callers (bcftools and inStrain)
+
+```{r s15callers}
+# Read data
+dnds_comp <- read.csv("../data/snps/dnds_S15_bcf_vs_is.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_comp)
+
+# Fit a linear model
+dnds_comp_lm <- lm(dnds_bcf ~ dnds_is95, data = dnds_comp)
+
+# Extract R-squared and p-value
+dnds_comp_lm_rs <- summary(dnds_comp_lm)$r.squared
+dnds_comp_lm_pv <- summary(dnds_comp_lm)$coefficients[2, 4]
+
+# Plot model
+dnds_plot_comp <- dnds_comp %>%
+  ggplot(aes(x = dnds_bcf, y = dnds_is95, color = phylum)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue", linewidth = 0.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.25) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.25) +
+  labs(x = "dN/dS (bcftools)", y = "dN/dS (inStrain ANI 95%)", title = "S15 comparison of dN/dS") +
+  annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
+           label = paste0("R² = ", round(dnds_comp_lm_rs, 3), 
+                          "\nP-value = ", signif(dnds_comp_lm_pv, 3))) +
+  theme_minimal() +
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5))
+dnds_plot_comp
+```
+
+We observe a lack of correlation between both callers (R² = 0.049, p-value = 0.15).
+
+# S15 MAGs dN/dS ratios (ANI 97-98%)
 
 We next compared the global selection pressure ratios of MAGs derived from the custom and custom2 variant calling (inStrain ANI 97% and 98%), calculated with dNdScv according to our methodology.
 
@@ -646,7 +681,7 @@ dnds_plot_instrain_lm <- dnds_instrain %>%
   scale_color_manual(values = c("#a6cee3", "#98d277", "#b15928")) +
   geom_vline(xintercept = 1, linetype = 1, linewidth = 0.25) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.25) +
-  labs(x = "dN/dS (ANI 98%)", y = "dN/dS (ANI 97%)", title = "Global dN/dS ratios of MAGs") +
+  labs(x = "dN/dS (ANI 98%)", y = "dN/dS (ANI 97%)", title = "S15 MAGs dN/dS") +
   annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
            label = paste0("R² = ", round(dnds_instrain_lm_rs, 3), 
                           "\nP-value = ", signif(dnds_instrain_lm_pv, 3))) +
@@ -654,14 +689,12 @@ dnds_plot_instrain_lm <- dnds_instrain %>%
   theme(axis.line = element_line(linewidth = 0.5),
         axis.ticks.y.left = element_line(linewidth = 0.5),
         axis.ticks.x.bottom = element_line(linewidth = 0.5))
-
-# Show:
 dnds_plot_instrain_lm
 ```
 
 The model tends to be more rigorous by using inStrain at ANI of 97% (no MAGs with global positive selection were detected).
 
-# Global dN/dS of S15 MAGs across all samples
+# S15 MAGs dN/dS across all samples (ANI 95-98%)
 
 Next, we compared the global ratios of the 44 MAGs from S15 (at default ANI: 95%) with the results of this sample mapped across all samples (eight metagenomes; at selected ANI of 95%, 97% and 98%).
 
@@ -681,8 +714,8 @@ dnds_plot_1 <- dnds_s15 %>%
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
   labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 95%)") +
   theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5))
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5))
 dnds_plot_1
 
 # Read the selection results of S15 mapped across all samples:
@@ -730,39 +763,66 @@ dnds_plot_4 <- dnds_s15_is98 %>%
 
 First, we do observe that mapping the S15 sample alone gives global dN/dS ratios below 1 (i.e., MAGs evolve under purifying selection). This selection pressure leads to an increase when mapping the S15 MAGs across all samples (after dereplication), and at higher ANI percentages (97-98%).
 
-# Correlation between callers (bcftools and inStrain)
+# Global dN/dS per-sample (ANI 95%)
 
-```{r s15callers}
+For downstream analysis, we proceeded exploring the results obtained with the caller inStrain (at ANI 95%).
+
+```{r dndsglob}
 # Read data
-dnds_comp <- read.csv("../data/snps/dnds_S15_bcf_vs_is.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-head(dnds_comp)
+dnds_global <- read.csv("../data/snps/rev02_dnds_global_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+print(dnds_global)
 
-# Fit a linear model
-dnds_comp_lm <- lm(dnds_bcf ~ dnds_is95, data = dnds_comp)
-
-# Extract R-squared and p-value
-dnds_comp_lm_rs <- summary(dnds_comp_lm)$r.squared
-dnds_comp_lm_pv <- summary(dnds_comp_lm)$coefficients[2, 4]
-
-# Plot model
-dnds_plot_comp <- dnds_comp %>%
-  ggplot(aes(x = dnds_bcf, y = dnds_is95, color = phylum)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE, color = "blue", linewidth = 0.5) +
-  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
-  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.25) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.25) +
-  labs(x = "dN/dS (bcftools)", y = "dN/dS (inStrain ANI 95%)", title = "S15 comparison of dN/dS") +
-  annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
-           label = paste0("R² = ", round(dnds_comp_lm_rs, 3), 
-                          "\nP-value = ", signif(dnds_comp_lm_pv, 3))) +
+# Plot global dN/dS ratios per sample
+snp_plot_global <- dnds_global %>%
+  ggplot(aes(x = mle, y = reorder(name, mle), color = name)) +
+  geom_pointrange(aes(xmin = cilow, xmax = cihigh), alpha = 0.8) +
+  scale_color_manual(values = c("#66c2a5", "#8da0cb", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5"), guide = "none") +
+  labs(x = "Global dN/dS ratios", y = "Sample", title = "S15 per-sample") +
   theme_minimal() +
   theme(axis.line = element_line(linewidth = 0.5),
         axis.ticks.y.left = element_line(linewidth = 0.5),
         axis.ticks.x.bottom = element_line(linewidth = 0.5))
-
-# Show:
-dnds_plot_comp
+snp_plot_global
 ```
 
-We observe a lack of correlation between both callers (R² = 0.049, p-value = 0.15).
+# Global dN/dS per-MAGs (top three phyla)
+
+```{r dndss15}
+# Read data
+
+```
+
+# Intrinsic mining genes under negative selection (NS)
+
+```{r dndsns}
+library(ggpubr)
+
+# Read data
+dnds_ns <- read.csv("../data/snps/rev02_genes_ns_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_ns)
+
+# Replicate violin across samples
+# Sort pathways and set colors to plot
+dnds_ns_sort <- dnds_ns %>%
+  dplyr::group_by(pathway) %>%
+  summarise(avg = mean(wmis_cv)) %>%
+  arrange(desc(avg))
+dnds_ns_sort$color <- c("#ddad3b", "#7f7f7f", "#8c2421")
+
+# Violin plot of all NS genes by pathway
+snp_plot_ns <- dnds_ns %>%
+  dplyr::mutate(sample = factor(sample, levels = c("S1", "S2", "S3", "S5", "S7", "S15", "S17", "S28"))) %>% #set order
+  ggviolin(x = "pathway", y = "wmis_cv", color = "pathway", shape = "pathway", add = "jitter",
+           order = dnds_ns_sort$pathway, palette = dnds_ns_sort$color,
+           legend = "none", size = 0.5, add.params = list(size = 1, alpha = 0.75)) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
+  stat_compare_means(method = "t.test", label = "p.signif", vjust = 0.25, size = 2,
+                     comparisons = list(c("Sulfur", "Iron"), c("Sulfur", "Copper"), c("Iron", "Copper")),
+                     label.y = c(1.1, 1.2, 1.3), bracket.size = 0.25, tip.length = 0.01) +
+  labs(x = "Pathway", y = "dN/dS ratio", title = "Mining genes under NS") +
+  facet_wrap(~ sample) +
+  theme(strip.background = element_blank(),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14))
+snp_plot_ns
+```
