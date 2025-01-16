@@ -788,8 +788,36 @@ snp_plot_global
 # Global dN/dS per-MAGs (top three phyla)
 
 ```{r dndss15}
-# Read data
+library(ggpubr)
 
+# Read data
+dnds_mags <- read.csv("../data/snps/rev02_dnds_S15_samples_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_mags)
+
+# Boxplot MAGs dN/dS ratios
+snp_plot_mags <- dnds_mags %>%
+  dplyr::mutate(sample = factor(sample, levels = c("S1", "S2", "S3", "S5", "S7", "S15", "S17", "S28"))) %>% #set order
+  dplyr::filter(phylum == "Acidobacteriota" | phylum == "Actinobacteriota" | phylum == "Proteobacteria") %>% #top 3 phyla
+  dplyr::mutate(phylum = factor(phylum, levels = c("Proteobacteria", "Acidobacteriota", "Actinobacteriota"))) %>%
+  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
+  geom_quasirandom(size = 1.5, alpha = 0.85) +
+  geom_boxplot(fill = NA, outlier.size = 0, outliers = FALSE) +
+  scale_color_manual(values = c("#b15928", "#a6cee3", "#98d277"), guide = "none") +
+  stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25, size = 2,
+                     comparisons = list(c("Proteobacteria", "Acidobacteriota"),
+                                        c("Proteobacteria", "Actinobacteriota"),
+                                        c("Acidobacteriota", "Actinobacteriota")), #c(2.4, 2.5, 2.6)
+                     label.y = c(1.1, 1.2, 1.3), bracket.size = 0.25, tip.length = 0.01) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
+  labs(x = "Phylum", y = "dN/dS ratio", title = "S15 MAGs per-sample") +
+  facet_wrap(~ sample, scales = "free_y") +
+  theme_minimal() +
+  theme(axis.line.x.bottom = element_line(size = 0.5),
+        axis.line.y.left = element_line(size = 0.5),
+        axis.ticks.x.bottom = element_line(size = 0.5),
+        axis.ticks.y.left = element_line(size = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+snp_plot_mags
 ```
 
 # Intrinsic mining genes under negative selection (NS)
@@ -821,8 +849,6 @@ snp_plot_ns <- dnds_ns %>%
                      label.y = c(1.1, 1.2, 1.3), bracket.size = 0.25, tip.length = 0.01) +
   labs(x = "Pathway", y = "dN/dS ratio", title = "Mining genes under NS") +
   facet_wrap(~ sample) +
-  theme(strip.background = element_blank(),
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14))
+  theme(strip.background = element_blank())
 snp_plot_ns
 ```
