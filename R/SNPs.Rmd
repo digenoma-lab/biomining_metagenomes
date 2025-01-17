@@ -768,7 +768,7 @@ First, we do observe that mapping the S15 sample alone gives global dN/dS ratios
 For downstream analysis, we proceeded exploring the results obtained with the caller inStrain (at ANI 95%).
 
 ```{r dndsglob}
-# Read data
+# Read data from dNdScv results
 dnds_global <- read.csv("../data/snps/rev02_dnds_global_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 print(dnds_global)
 
@@ -777,7 +777,7 @@ snp_plot_global <- dnds_global %>%
   ggplot(aes(x = mle, y = reorder(name, mle), color = name)) +
   geom_pointrange(aes(xmin = cilow, xmax = cihigh), alpha = 0.8) +
   scale_color_manual(values = c("#66c2a5", "#8da0cb", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5"), guide = "none") +
-  labs(x = "Global dN/dS ratios", y = "Sample", title = "S15 per-sample") +
+  labs(x = "Global dN/dS ratios", y = "Sample", title = "Global dN/dS ratios (dNdScv)") +
   theme_minimal() +
   theme(axis.line = element_line(linewidth = 0.5),
         axis.ticks.y.left = element_line(linewidth = 0.5),
@@ -790,12 +790,21 @@ snp_plot_global
 ```{r dndss15}
 library(ggpubr)
 
-# Read data
-dnds_mags <- read.csv("../data/snps/rev02_dnds_S15_samples_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-head(dnds_mags)
+# Read raw data from dNdScv results
+dnds_dndscv <- read.csv("../data/snps/rev02_dnds_sam_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_dndscv)
+
+# Normalize dN/dS per-gene by contamination
+dnds_mags_sam <- dnds_dndscv %>%
+  dplyr::mutate(dnds_adj = wmis_cv * (1 - contamination / 100)) %>%
+  dplyr::group_by(sample, phylum, bin) %>% #separate by samples
+  dplyr::summarise(snps = n(), dnds_sum = sum(dnds_adj), .groups = "drop") %>%
+  ungroup() %>%
+  dplyr::mutate(dnds_glob = dnds_sum / snps / 8) #divide by total genes/samples
+head(dnds_mags_sam)
 
 # Boxplot MAGs dN/dS ratios
-snp_plot_mags <- dnds_mags %>%
+snp_plot_mags <- dnds_mags_sam %>%
   dplyr::mutate(sample = factor(sample, levels = c("S1", "S2", "S3", "S5", "S7", "S15", "S17", "S28"))) %>% #set order
   dplyr::filter(phylum == "Acidobacteriota" | phylum == "Actinobacteriota" | phylum == "Proteobacteria") %>% #top 3 phyla
   dplyr::mutate(phylum = factor(phylum, levels = c("Proteobacteria", "Acidobacteriota", "Actinobacteriota"))) %>%
@@ -809,18 +818,18 @@ snp_plot_mags <- dnds_mags %>%
                                         c("Acidobacteriota", "Actinobacteriota")),
                      label.y = c(1.05, 1.15, 1.25), bracket.size = 0.25, tip.length = 0.01) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
-  labs(x = "Phylum", y = "dN/dS ratio", title = "S15 MAGs per-sample") +
+  labs(x = "Phylum", y = "dN/dS ratio", title = "MAGs per-sample") +
   facet_wrap(~ sample, scales = "free_y") +
   theme_minimal() +
-  theme(axis.line.x.bottom = element_line(size = 0.5),
-        axis.line.y.left = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
+  theme(axis.line.x.bottom = element_line(linewidth = 0.5),
+        axis.line.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
         axis.text.x = element_text(angle = 45, hjust = 1))
 snp_plot_mags
 
-# Merge ratios per bin and plot
-snp_plot_mags_all <- dnds_mags %>%
+# Group ratios per MAG and plot
+snp_plot_mags_all <- dnds_mags_sam %>%
   dplyr::group_by(phylum, bin) %>%
   dplyr::summarise(dnds = mean(dnds_glob), .groups = "drop") %>%
   dplyr::filter(phylum == "Acidobacteriota" | phylum == "Actinobacteriota" | phylum == "Proteobacteria") %>% #top 3 phyla
@@ -835,34 +844,74 @@ snp_plot_mags_all <- dnds_mags %>%
                                         c("Acidobacteriota", "Actinobacteriota")),
                      label.y = c(1.05, 1.15, 1.25), bracket.size = 0.25, tip.length = 0.01) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
-  labs(x = "Phylum", y = "dN/dS ratio", title = "S15 MAGs (all samples)") +
+  labs(x = "Phylum", y = "dN/dS ratio", title = "Mining MAGs (all samples; dereplicated)",
+       subtitle = "Prot.: 71 bins; Acid.: 22; Acti.: 64") +
   theme_minimal() +
-  theme(axis.line.x.bottom = element_line(size = 0.5),
-        axis.line.y.left = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5))
+  theme(axis.line.x.bottom = element_line(linewidth = 0.5),
+        axis.line.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5))
 snp_plot_mags_all
 
-# Prepare data to run a linear model
-dnds_mags_comp <- read.csv("../data/snps/rev02_dnds_S15_corr_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-head(dnds_mags_comp)
+# Extract bins according to the equivalence with dRep (dereplication)
+dnds_mags_s15 <- dnds_mags_sam %>%
+  dplyr::filter(grepl("S15.", bin) |
+                bin == "SPAdes-MetaBAT2Refined-S5.34" |
+                bin == "SPAdes-MetaBAT2Refined-S3.159_sub" |
+                bin == "SPAdes-MetaBAT2Refined-S5.59" |
+                bin == "SPAdes-MetaBAT2Refined-S7.123_sub" |
+                bin == "SPAdes-MetaBAT2Refined-S17.18" |
+                bin == "SPAdes-MetaBAT2Refined-S2.122_sub" |
+                bin == "SPAdes-MetaBAT2Refined-S5.72" |
+                bin == "SPAdes-MaxBin2Refined-S3.007_sub")
+dnds_mags_s15 <- dnds_mags_s15 %>%
+  dplyr::mutate(bin = case_when(
+    bin == "SPAdes-MetaBAT2Refined-S5.34" ~ "SPAdes-MetaBAT2Refined-S15.45",
+    bin == "SPAdes-MetaBAT2Refined-S3.159_sub" ~ "SPAdes-MaxBin2Refined-S15.001_sub",
+    bin == "SPAdes-MetaBAT2Refined-S5.59" ~ "SPAdes-MetaBAT2Refined-S15.15_sub",
+    bin == "SPAdes-MetaBAT2Refined-S7.123_sub" ~ "SPAdes-MaxBin2Refined-S15.019_sub",
+    bin == "SPAdes-MetaBAT2Refined-S17.18" ~ "SPAdes-MetaBAT2Refined-S15.14",
+    bin == "SPAdes-MetaBAT2Refined-S2.122_sub" ~ "SPAdes-MetaBAT2Refined-S15.68",
+    bin == "SPAdes-MetaBAT2Refined-S5.72" ~ "SPAdes-MetaBAT2Refined-S15.20",
+    bin == "SPAdes-MaxBin2Refined-S3.007_sub" ~ "SPAdes-MetaBAT2Refined-S15.18",
+    TRUE ~ bin))
+head(dnds_mags_s15)
 
-# Fit and extract values
-dnds_mags_comp_lm <- lm(dnds_s15 ~ dnds_all, data = dnds_mags_comp)
-dnds_mags_comp_lm_rs <- summary(dnds_mags_comp_lm)$r.squared
-dnds_mags_comp_lm_pv <- summary(dnds_mags_comp_lm)$coefficients[2, 4]
+# Load dN/dS for S15 MAGs and add filtered bins
+dnds_s15 <- read.csv("../data/snps/dnds_S15_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+dnds_mags_s15 <- dnds_mags_s15 %>% dplyr::filter(sample == "S15")
+dim(dnds_mags_s15)
+dnds_mags_s15_add <- dnds_s15 %>%
+  dplyr::mutate(sample = "S15") %>%
+  relocate(sample, .before = phylum) %>%
+  dplyr::filter(!bin %in% dnds_mags_s15$bin)
+dnds_mags_s15 <- rbind(dnds_mags_s15, dnds_mags_s15_add)
+dim(dnds_mags_s15)
 
-# Plot model
-snp_plot_mags_lm <- dnds_mags_comp %>%
+# Prepare data with ratios of S15 vs all samples
+dnds_mags_s15_corr <- dnds_mags_s15 %>%
+  dplyr::select(phylum, bin, dnds_glob) %>%
+  dplyr::rename(dnds_all = dnds_glob) %>%
+  left_join(dplyr::select(dnds_s15, bin, dnds_glob), by = "bin") %>%
+  dplyr::rename(dnds_s15 = dnds_glob)
+head(dnds_mags_s15_corr)
+
+# Now, we can correlate the 44 MAGs from S15 across all samples
+dnds_s15_corr <- lm(dnds_s15 ~ dnds_all, data = dnds_mags_s15_corr)
+dnds_s15_corr_rs <- summary(dnds_s15_corr)$r.squared
+dnds_s15_corr_pv <- summary(dnds_s15_corr)$coefficients[2, 4]
+
+# Plot linear model
+snp_plot_mags_lm <- dnds_mags_s15_corr %>%
   ggplot(aes(x = dnds_s15, y = dnds_all, color = phylum)) +
   geom_point(size = 3) +
   geom_smooth(method = "lm", se = TRUE, color = "blue", linewidth = 0.5) +
   scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
   scale_y_continuous(limits = c(0, 0.8)) +
-  labs(x = "dN/dS (S15)", y = "dN/dS (all)", title = "S15 correlation (single vs all samples)") +
+  labs(x = "dN/dS (S15)", y = "dN/dS (S15 in all samples)", title = "dN/dS ratios of S15") +
   annotate("text", x = 0.2, y = 0.7, color = "black", size = 5, hjust = 0,
-           label = paste0("R² = ", round(dnds_mags_comp_lm_rs, 3), 
-                          "\nP-value = ", signif(dnds_mags_comp_lm_pv, 3))) +
+           label = paste0("R² = ", round(dnds_s15_corr_rs, 3), 
+                          "\nP-value = ", signif(dnds_s15_corr_pv, 3))) +
   theme_minimal() +
   theme(axis.line = element_line(linewidth = 0.5),
         axis.ticks.y.left = element_line(linewidth = 0.5),
@@ -875,20 +924,50 @@ snp_plot_mags_lm
 ```{r dndsns}
 library(ggpubr)
 
-# Read data
-dnds_ns <- read.csv("../data/snps/rev02_genes_ns_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-head(dnds_ns)
+# Read results from dNdScv
+dnds_dndscv <- read.csv("../data/snps/rev02_dnds_sam_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Replicate violin across samples
-# Sort pathways and set colors to plot
-dnds_ns_sort <- dnds_ns %>%
+# Get genes under NS
+dnds_mags_nsgenes <- dnds_dndscv %>% dplyr::filter(wmis_cv < 1 & wmis_cv != 0)
+
+# Read list with intrinsic genes extracted from the annotation (GFF file)
+snp_cds_genes <- read.csv("../data/snps/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+# Discard unknown gene names
+snp_cds_genes <- snp_cds_genes %>% dplyr::filter(nchar(name) < 14)
+
+# Subset list to those genes under NS (the same `gene_id` could appear in different samples)
+dnds_mags_nsgenes_sub <- snp_cds_genes[snp_cds_genes$gene_id %in% dnds_mags_nsgenes$gene_name, ]
+dnds_mags_nsgenes_sub <- left_join(dnds_mags_nsgenes_sub, dnds_mags_nsgenes, by = join_by(gene_id == gene_name))
+
+# Separate genes by pathway
+fx_snpGene2Path <- function(g) {
+  if (grepl("copper", g, ignore.case = TRUE))
+    return("Copper")
+  if (grepl("iron", g, ignore.case = TRUE))
+    return("Iron")
+  if (grepl("sulf|soxr", g, ignore.case = TRUE))
+    return("Sulfur")
+  else
+    return("Other")
+}
+snp_nspath <- vector()
+for (i in 1:nrow(dnds_mags_nsgenes_sub)) {
+	snp_nspath <- append(snp_nspath, fx_snpGene2Path(dnds_mags_nsgenes_sub$product[i]))
+}
+dnds_mags_nsgenes_sub$pathway <- snp_nspath
+dnds_mags_nsgenes_sub <- dnds_mags_nsgenes_sub %>% dplyr::filter(pathway != "Other")
+head(dnds_mags_nsgenes_sub)
+
+# Sort pathways and set colors
+dnds_ns_sort <- dnds_mags_nsgenes_sub %>%
   dplyr::group_by(pathway) %>%
   summarise(avg = mean(wmis_cv)) %>%
   arrange(desc(avg))
 dnds_ns_sort$color <- c("#ddad3b", "#7f7f7f", "#8c2421")
 
-# Violin plot of all NS genes by pathway
-snp_plot_ns <- dnds_ns %>%
+# Violin plot of all NS genes by pathway across samples
+snp_plot_ns <- dnds_mags_nsgenes_sub %>%
   dplyr::mutate(sample = factor(sample, levels = c("S1", "S2", "S3", "S5", "S7", "S15", "S17", "S28"))) %>% #set order
   ggviolin(x = "pathway", y = "wmis_cv", color = "pathway", shape = "pathway", add = "jitter",
            order = dnds_ns_sort$pathway, palette = dnds_ns_sort$color,
@@ -903,7 +982,7 @@ snp_plot_ns <- dnds_ns %>%
 snp_plot_ns
 
 # Plot all NS genes merged
-snp_plot_ns_all <- dnds_ns %>%
+snp_plot_ns_all <- dnds_mags_nsgenes_sub %>%
   ggviolin(x = "pathway", y = "wmis_cv", color = "pathway", shape = "pathway", add = "jitter",
            order = dnds_ns_sort$pathway, palette = dnds_ns_sort$color,
            legend = "none", size = 0.5, add.params = list(size = 1, alpha = 0.75)) +
