@@ -1379,7 +1379,7 @@ ggsave("article_profiling/fig_3.png", fig_3, height = 7, width = 20)
 
 # Get annotations (parsed from the VCF generated with SnpEff)
 #sampleID chr pos ref mut
-snp_mutations <- read.csv("article_profiling/5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+#snp_mutations <- read.csv("article_profiling/5-SNPs/dndscv/run/S15_mutations.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
 # Run dndscv (runtime ~8 min, high memory usage) and save object
 #snp_dndsout <- dndscv(snp_mutations, refdb = "article_profiling/5-SNPs/dndscv/buildref/S15_refcds.rda",
@@ -1389,18 +1389,25 @@ snp_mutations <- read.csv("article_profiling/5-SNPs/dndscv/run/S15_mutations.txt
 #save(substmodel, file = "article_profiling/5-SNPs/dndscv/run/S15_substmodel.rda")
 #load("article_profiling/5-SNPs/dndscv/run/S15_dndsout.rda")
 #load("article_profiling/5-SNPs/dndscv/run/S15_substmodel.rda")
-rm(snp_mutations) #clean memory
+#rm(snp_mutations) #clean memory
 
 # Explore output object..
 #https://github.com/im3sanger/dndscv/issues/6
 #https://github.com/im3sanger/dndscv/issues/64
-head(snp_dndsout$sel_cv) #dN/dS ratios at gene-level
-head(snp_dndsout$annotmuts) #list of annotated mutations
-print(snp_dndsout$globaldnds) #driver globals
+#head(snp_dndsout$sel_cv) #dN/dS ratios at gene-level
+#head(snp_dndsout$annotmuts) #list of annotated mutations
+#print(snp_dndsout$globaldnds) #driver globals
 
 # Save matrix with dN/dS: driver discovery or genes under positive selection (PS)
-snp_selcv <- snp_dndsout$sel_cv
-rm(snp_dndsout) #clean memory
+#snp_selcv <- snp_dndsout$sel_cv
+#rm(snp_dndsout) #clean memory
+
+## --- filtered VCF --- ##
+# Load matrix with dN/dS: driver discovery or genes under positive selection (PS)
+load("article_profiling/5-SNPs/dndscv/run/selcv_s15_filt.rda") #146,932 genes
+
+# Load driver globals
+load("article_profiling/5-SNPs/dndscv/run/global_s15_filt.rda")
 
 # Group global dN/dS ratios:
 #https://github.com/im3sanger/dndscv/issues/63
@@ -1512,7 +1519,12 @@ for (i in 1:nrow(snp_psgenes)) {
 snp_psgenes["contig"] <- snp_gene2contig
 snp_psgenes["bin"] <- snp_contig2bin
 snp_psgenes["name"] <- snp_genenames
-rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames) #clean memory
+rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames, i) #clean memory
+
+# All MAGs has genes under PS?: No
+length(unique(snp_psgenes$bin))
+# Which?: S15.19
+mags_qc[!(mags_qc$bin %in% snp_psgenes$bin), ]
 
 # Group PS genes to add taxa & QC
 snp_dnds <- snp_psgenes %>%
@@ -1538,6 +1550,8 @@ rm(snp_taxabins) #clean memory
 snp_dnds <- snp_dnds %>%
   dplyr::mutate(genus = ifelse(genus == "", "uGGB", genus)) %>%
   dplyr::mutate(species = ifelse(species == "", "uSGB", species))
+
+###.HERE
 
 # Subset PS genes to plot mutations -> synonymous/missense (non-syn.)/nonsense
 #discard hypothetical proteins (HPs: according to name)
@@ -1721,12 +1735,12 @@ snp_plot_nsgensub <- snp_nsgenes_sub %>%
         axis.title = element_text(size = 18))
 ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_nsgenesprod.pdf", snp_plot_nsgensub, height = 10, width = 11)
 
-# Global gene estimation of dN/dS (PS and NS)
+# Global gene estimation of dN/dS (genes under PS and NS)
 snp_estim <- snp_selcv %>%
   dplyr::select(gene_name, wmis_cv, pmis_cv) %>%
   dplyr::filter(wmis_cv != 0)
 
-# Populate global dataset (~2 min)
+# Populate global dataset (runtime: ~2 min)
 snp_gene2contig <- vector()
 snp_contig2bin <- vector()
 snp_genenames <- vector()
@@ -1738,61 +1752,88 @@ for (i in 1:nrow(snp_estim)) {
 snp_estim["contig"] <- snp_gene2contig
 snp_estim["bin"] <- snp_contig2bin
 snp_estim["name"] <- snp_genenames
-rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames) #clean memory
+rm(snp_refcds, snp_bins, snp_genids, snp_gene2contig, snp_contig2bin, snp_genenames, i) #clean memory
 
 # Add taxa & QC
 snp_estim <- left_join(snp_estim, snp_dnds, by = c("bin")) %>%
   dplyr::select(-c("num", "genus", "species"))
+#add data for missing MAG: S15.19
+snp_estim <- snp_estim %>%
+  dplyr::mutate(phylum = case_when(is.na(phylum) ~ "Actinobacteriota", TRUE ~ phylum),
+                completeness = case_when(is.na(completeness) ~ 98.29, TRUE ~ completeness),
+                contamination = case_when(is.na(contamination) ~ 1.71, TRUE ~ contamination),
+                predicted_genes = case_when(is.na(predicted_genes) ~ 2003, TRUE ~ predicted_genes))
+
+# Any MAG >1? Yes: 2 (raw ratios)
+snp_estim_glob <- snp_estim %>% dplyr::group_by(bin) %>% summarise(dnds_glob = mean(wmis_cv))
 
 # Normalize dN/dS per gene by MAG contamination, then group by phylum
-snp_estim_phy <- snp_estim %>%
+snp_estim_phy.filt <- snp_estim %>%
   dplyr::mutate(dnds_adj = wmis_cv * (1 - contamination / 100)) %>%
   dplyr::group_by(phylum, bin) %>%
-  dplyr::summarise(snps = n(), dnds_sum = sum(dnds_adj)) %>%
+  dplyr::summarise(snps = n(), dnds_sum = sum(dnds_adj), .groups = "drop") %>%
   ungroup() %>%
   dplyr::mutate(dnds_glob = dnds_sum / snps) %>% #divide by total genes and get top 3 phyla
   dplyr::filter(phylum == "Proteobacteria" | phylum == "Acidobacteriota" | phylum == "Actinobacteriota")
 
 # Sort phylum by median and set colors
-snp_estim_sort_phy <- snp_estim_phy %>%
+snp_estim_sort_phy <- snp_estim_phy.filt %>%
   dplyr::group_by(phylum) %>%
   dplyr::summarise(n = median(dnds_glob)) %>%
   dplyr::arrange(desc(n))
 snp_estim_sort_phy$color <- c("#b15928", "#98d277", "#a6cee3")
 
 # Boxplot global dN/dS ratios by phylum
-snp_plot_estim_phy <- snp_estim_phy %>%
+#snp_plot_estim_phy <- snp_estim_phy %>%
+#  ggboxplot(x = "phylum", y = "dnds_glob", color = "phylum", add = "jitter",
+#            order = snp_estim_sort_phy$phylum, palette = snp_estim_sort_phy$color,
+#             size = 0.55, legend = "none", add.params = list(size = 3.25, alpha = 0.7)) +
+#  geom_hline(yintercept = mean(snp_estim_phy$dnds_glob), linetype = 2, linewidth = 0.4) +
+#  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
+#  labs(x = "Phylum", y = "Global normalized dN/dS ratio") +
+#  stat_compare_means(method = "anova", label.y = 1.475, size = 6) +
+#  stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25,
+#                     comparisons = list(c("Proteobacteria", "Actinobacteriota"),
+#                                        c("Proteobacteria", "Acidobacteriota"),
+#                                        c("Actinobacteriota", "Acidobacteriota")),
+#                     label.y = c(1.25, 1.325, 1.4), bracket.size = 0.25, size = 5) +
+#  theme(axis.text = element_text(size = 15),
+#        axis.title = element_text(size = 18))
+#ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 9, width = 6)
+##filtered
+snp_plot_estim_phy <- snp_estim_phy.filt %>%
   ggboxplot(x = "phylum", y = "dnds_glob", color = "phylum", add = "jitter",
             order = snp_estim_sort_phy$phylum, palette = snp_estim_sort_phy$color,
              size = 0.55, legend = "none", add.params = list(size = 3.25, alpha = 0.7)) +
-  geom_hline(yintercept = mean(snp_estim_phy$dnds_glob), linetype = 2, linewidth = 0.4) +
+  geom_hline(yintercept = mean(snp_estim_phy.filt$dnds_glob), linetype = 2, linewidth = 0.4) +
   geom_hline(yintercept = 1, linetype = 1, linewidth = 0.4) +
   labs(x = "Phylum", y = "Global normalized dN/dS ratio") +
-  stat_compare_means(method = "anova", label.y = 1.475, size = 6) +
-  stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25,
+  stat_compare_means(method = "anova", label.y = 1.9, size = 6) +
+  stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25, tip.length = 0.02,
                      comparisons = list(c("Proteobacteria", "Actinobacteriota"),
                                         c("Proteobacteria", "Acidobacteriota"),
                                         c("Actinobacteriota", "Acidobacteriota")),
-                     label.y = c(1.25, 1.325, 1.4), bracket.size = 0.25, size = 5) +
+                     label.y = c(1.65, 1.725, 1.8), bracket.size = 0.25, size = 5) +
   theme(axis.text = element_text(size = 15),
         axis.title = element_text(size = 18))
-ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 9, width = 6)
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/filtered/plot_dnds_estim_phy.pdf", snp_plot_estim_phy, height = 9, width = 6)
 
 # Aggregate normalized dN/dS ratios by bin
-snp_estim_bin <- snp_estim %>%
+snp_estim_bin.filt <- snp_estim %>%
   dplyr::mutate(dnds_adj = wmis_cv * (1 - contamination / 100)) %>%
   dplyr::group_by(phylum, bin) %>%
   dplyr::summarise(snps = n(), dnds_sum = sum(dnds_adj)) %>%
   ungroup() %>%
   dplyr::mutate(dnds_glob = dnds_sum / snps) %>% #divide by total genes
   dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MaxBin2Refined-", "")) %>% #trim bin names
-  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MetaBAT2Refined-", ""))
+  dplyr::mutate(bin = str_replace_all(bin, "SPAdes-MetaBAT2Refined-", "")) %>%
+  dplyr::filter() #remove bin with
 
 # Sort bins
-snp_estim_sort_bin <- snp_estim_bin %>% dplyr::arrange(dnds_glob)
+snp_estim_sort_bin <- snp_estim_bin.filt %>% dplyr::arrange(dnds_glob)
 
 # Barplot global dN/dS ratios by MAG bins
-snp_plot_estim_bin <- snp_estim_bin %>%
+snp_plot_estim_bin <- snp_estim_bin.filt %>%
   dplyr::rename(Phylum = phylum) %>% #rename col.
   ggbarplot(x = "bin", y = "dnds_glob", color = "Phylum", fill = "Phylum", legend = "right",
             order = snp_estim_sort_bin$bin, palette = tree_colors, rotate = TRUE) +
@@ -1802,7 +1843,7 @@ snp_plot_estim_bin <- snp_estim_bin %>%
   theme(legend.text = element_text(size = 14),
         axis.text = element_text(size = 15),
         axis.title = element_text(size = 18))
-ggsave("article_profiling/5-SNPs/dndscv/results/plot/plot_dnds_estim_bin.pdf", snp_plot_estim_bin, height = 9, width = 7)
+ggsave("article_profiling/5-SNPs/dndscv/results/plot/filtered/plot_dnds_estim_bin.pdf", snp_plot_estim_bin, height = 9, width = 7)
 
 # Load lists of PS and NS genes (externally* matched against KEGG KOs from KOfamScan hits)
 snp_kops <- read.csv("article_profiling/5-SNPs/dndscv/results/kofam/ps_genes_kos.txt", sep = "\t", header = FALSE, stringsAsFactors = FALSE)
@@ -1957,13 +1998,13 @@ fig_5a <- wrap_plots(snp_plot_nsgenes, snp_plot_nsgensub, widths = c(1, 1)) +
 ggsave("article_profiling/fig_5a.pdf", fig_5a, height = 10, width = 15)
 #ggsave("article_profiling/fig_5a.png", fig_5a, height = 10, width = 15)
 fig_5b <- wrap_plots(snp_plot_psgenes, snp_plot_kos, design = "AABBB", heights = c(0.9, 1)) +
-  plot_annotation(tag_levels = list(c("c", "d"))) &
+  plot_annotation(tag_levels = list(c("c", "", "d"))) &
   theme(plot.tag = element_text(size = 22, face = "bold"))
 ggsave("article_profiling/fig_5b.pdf", fig_5b, height = 12, width = 22)
 #ggsave("article_profiling/fig_5b.png", fig_5b, height = 12, width = 22)
 #compose
 fig_5 <- wrap_plots(wrap_plots(fig_5a, plot_spacer(), widths = c(1, 0.35)) / fig_5b) +
-  plot_annotation(tag_levels = list(c("a", "b", "c", "d"))) &
+  plot_annotation(tag_levels = list(c("a", "b", "c", "", "d"))) &
   theme(plot.tag = element_text(size = 22, face = "bold"))
 ggsave("article_profiling/fig_5.pdf", fig_5, height = 22, width = 22)
 ggsave("article_profiling/fig_5.png", fig_5, height = 22, width = 22)
