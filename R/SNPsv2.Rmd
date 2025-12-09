@@ -74,55 +74,7 @@ mag_mut_cov_d1=left_join(mag_mut_d1,mag_cov)
 mag_mut_cov_d1$mutations_per_megabase <- mag_mut_cov_d1$n / (mag_mut_cov_d1$l / 1e6)
 mag_mut_cov_tax_d1=left_join(mag_mut_cov_d1,mag_qual, by=c("MAG"="mag"))
 ```
-```{r plotsqc}
-#library(patchwork)
 
-data <- data.frame(
-  Category = c(
-    "Total mapped pairs",
-    "Pairs passing max insert size threshold",
-    "Pairs passing min insert size threshold",
-    "Pairs passing mapQ threshold",
-    "Pass min read ANI",
-    "Total filtered pairs"
-  ),
-  Percentage = c(100, 100, 99, 99, 92, 91)
-)
-
-# Create the barplot
-p3=ggplot(data, aes(x = reorder(Category, -Percentage), y = Percentage, fill = Category)) +
-  geom_bar(stat = "identity", width = 0.7, color = "black") +
-  coord_flip() +  # Flip the coordinates for a horizontal barplot
-  labs(
-    title = "Mapping and Filtering Metrics",
-    x = "Category",
-    y = "Percentage"
-  ) +
-  scale_y_continuous(labels = scales::percent_format(scale = 1)) +  # Show percentage on the y-axis
-  theme_minimal(base_size = 14) +
-  theme(
-    legend.position = "none",
-    axis.text.y = element_text(size = 12),
-    axis.title.x = element_text(size = 14),
-    plot.title = element_text(size = 16, face = "bold")
-  )
-
-# Histogram for QUAL
-p1=ggplot(filtered_d1, aes(x = var_freq)) +
-  geom_histogram(binwidth = 0.05, fill = "blue", color = "black", alpha = 0.7) +
-  labs(title = "Variant Allele Frequency", x = "VAF", y = "Frequency") +
-  theme_minimal()
-
-# Histogram for dp_data
-p2=ggplot(filtered_d1, aes(x = position_coverage)) +
-  geom_histogram(binwidth = 10, fill = "orange", color = "black", alpha = 0.7) +
-  labs(title = "Distribution of variant read depth (DP)", x = "Depth", y = "Frequency") +
-  xlim(c(5,1000))+
-  theme_minimal()
-
-p3+p2+p1
-```
- 
 We build a linear model to test for association regarding the number of mutations
  
 ```{r lmodeld1}
@@ -131,6 +83,7 @@ summary(a)
 ```
 
 ```{r modelplotd1}
+library(RColorBrewer)
 # Extract p-values for each predictor
 p_values <- summary(a)$coefficients[-1, 4]  # Exclude intercept
 predictor_names <- names(p_values)
@@ -142,8 +95,17 @@ long_data <- mag_mut_cov_tax_d1 %>%
     names_to = "predictor",
     values_to = "value"
   )
+unique_phyla <- unique(long_data$phylum)
+phylum_colors <- setNames(scales::hue_pal()(length(unique_phyla)), unique_phyla)
 
-# Add p-values as a label to the dataset
+
+# Define a consistent color palette for phylum
+#phylum_colors <- c(
+#  "Actinobacteriota" = "#1f77b4", "Proteobacteria" = "#ff7f0e", "Acidobacteriota" = "#2ca02c", 
+#  "Firmicutes_E" = "#d62728", "Nitrospirota_A" = "#9467bd", "Dormibacterota" = "#8c564b")
+
+
+w# Add p-values as a label to the dataset
 long_data <- long_data %>%
   mutate(
     p_value_label = case_when(
@@ -157,30 +119,25 @@ long_data <- long_data %>%
   )
 
 # Plot with facets and p-value annotations
-ggplot(long_data, aes(x = value, y = mutations_per_megabase, color=phylum)) +
+p1=ggplot(long_data, aes(x = value, y = mutations_per_megabase, color=phylum)) +
   geom_point(alpha = 0.7) +
   geom_smooth(method = "lm", se = TRUE, color = "blue") +
   facet_wrap(~ predictor, scales = "free_x") +
   geom_text(data = distinct(long_data, predictor, p_value_label),  # Avoid duplicate labels
             aes(x = Inf, y = Inf, label = p_value_label),
             hjust = 1.1, vjust = 1.5, inherit.aes = FALSE) +
+    scale_color_manual(values = phylum_colors) +  # Apply consistent colors
   labs(
-    title = "Response vs Predictors with p-values",
+    title = "Mutations vs Predictors",
     x = "Predictor Value",
     y = "Mutations per Megabase"
   ) +
-  theme_minimal()
+  theme_minimal() + theme(legend.position = "bottom")
 ```
 
 
  
-Highly significant (p < 0.001). Each unit increase in mean_cov is associated with an increase of ~4.32 mutations per megabase 
-
-The model explains 31.6% of the variance in mutations_per_megabase.
-
-mean_cov: The only significant predictor (p < 0.001). It has a strong, positive effect on mutation rates, meaning higher sequencing coverage results in more detected mutations. This aligns with the expectation that greater coverage improves variant detection sensitivity.
-
-Other predictors (contamination, gc, strain_heterogeneity, completeness) are not statistically significant (p > 0.05), suggesting they do not have strong or consistent effects on mutation rates in this dataset.
+The linear model examines how various factors (mean coverage, contamination, GC content, strain heterogeneity, and completeness) influence the number of mutations per megabase.  ~20.4% of the variance in mutations per megabase is explained by the model. The strongest predictor appears to be mean coverage (p = 0.078), suggesting a possible but weak association between sequencing depth and mutation rate. The overall model is not statistically significant, then there is no strong evidence that these predictors collectively explain mutation rates within our dataset.
 
 ```{r anovamut}
 # Count MAGs per phylum
@@ -193,115 +150,288 @@ filtered_data <- mag_mut_cov_tax_d1[mag_mut_cov_tax_d1$phylum %in% valid_phyla, 
 anova_model <- aov(mutations_per_megabase ~ phylum, data = filtered_data)
 summary(anova_model)
 
+anova_p_value <- summary(anova_model)[[1]]["Pr(>F)"][1, 1]  # Extract p-value
+p_value_label <- paste0("ANOVA p = ", signif(anova_p_value, 3))  # Scientific notation
+
 tukey_results_filtered <- TukeyHSD(anova_model)
 print(tukey_results_filtered)
 
 
-ggplot(filtered_data, aes(x = phylum, y = mutations_per_megabase, fill = phylum)) +
+p2=ggplot(filtered_data, aes(x = phylum, y = mutations_per_megabase, fill = phylum)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   geom_jitter(width = 0.2, alpha = 0.5) +
+  scale_fill_manual(values = phylum_colors) +
+  geom_text(aes(x = 1.5, y = max(mutations_per_megabase, na.rm = TRUE), 
+                label = p_value_label), inherit.aes = FALSE, size = 3) +  # ANOVA p-value annotation
   labs(
-    title = "Number of Mutations per Megabase by Phylum (Filtered)",
+    title = "",
     x = "Phylum",
     y = "Mutations per Megabase"
   ) +
   theme_minimal() +
   theme(legend.position = "none")
 
+
+(p1+p2) + plot_layout(widths = c(2, 1))  + plot_annotation(tag_levels = 'A')
+pdf("SNPQC.pdf",width=8)
+(p1+p2) + plot_layout(widths = c(2, 1))  + plot_annotation(tag_levels = 'A')
+dev.off()
+
+png("SNPQC.png",width = 800, height = 600)
+(p1+p2) + plot_layout(widths = c(2, 1))  + plot_annotation(tag_levels = 'A')
+dev.off()
+
 ```
 
-There is no strong evidence that the mean number of mutations per megabase differs significantly among the phyla included in the filtered dataset.
+Figure: SNP quality control and variant calling in MAGs
+(A) The linear model assesses the influence of multiple factors—including mean coverage, contamination, GC content, strain heterogeneity, and completeness—on the number of mutations per megabase. The model explains approximately 20.4% of the variance in mutation rates. Among the predictors, mean coverage exhibits the strongest association (p = 0.078), suggesting a possible but weak relationship between sequencing depth and mutation rate. However, the overall model is not statistically significant, indicating that these factors do not collectively provide strong explanatory power for mutation rate variation in our dataset. (B) There is no strong evidence to suggest that the mean number of mutations per megabase differs significantly across the phyla included in the filtered dataset.
 
-# Global dN/dS ratios 
 
-We next compared the global selection pressure ratios of MAGs derived from the custom and custom2 variant calling (inStrain ANI 97% and 98%), calculated with dNdScv according to our methodology.
 
-```{r magsdnds}
-# Read dN/dS ratios calculated with calling at ANI of 97% and 98%
-dnds_instrain <- read.csv("../data/snps/dnds_inStrain_compare.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
 
-# Fit a linear model comparing ratios
-dnds_instrain_lm <- lm(dnds_is97 ~ dnds_is98, data = dnds_instrain)
 
-# Extract R-squared and p-value
-dnds_instrain_lm_rs <- summary(dnds_instrain_lm)$r.squared
-dnds_instrain_lm_pv <- summary(dnds_instrain_lm)$coefficients[2, 4]
+## DN/DS analysis
 
-# Plot model (top three phyla)
-dnds_plot_instrain_lm <- dnds_instrain %>%
-  ggplot(aes(x = dnds_is98, y = dnds_is97, color = phylum)) +
-  geom_point(size = 3) +
-  geom_smooth(method = "lm", se = TRUE, color = "blue", linewidth = 0.5) +
-  scale_x_continuous(limits = c(0.2, 1.05)) +
-  scale_color_manual(values = c("#98d277", "#a6cee3", "#b15928")) +
-  geom_vline(xintercept = 1, linetype = 1, linewidth = 0.25) +
-  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.25) +
-  labs(x = "dN/dS (ANI 98%)", y = "dN/dS (ANI 97%)", title = "Global dN/dS ratios of MAGs") +
-  annotate("text", x = 0.2, y = 0.9, color = "black", size = 5, hjust = 0,
-           label = paste0("R² = ", round(dnds_instrain_lm_rs, 3), 
-                          "\nP-value = ", signif(dnds_instrain_lm_pv, 3))) +
-  theme_minimal()
+# Global dN/dS per-sample (ANI 95%)
 
-dnds_plot_instrain_lm
+For downstream analysis, we proceeded exploring the results obtained with the caller inStrain (at ANI 95%).
+
+```{r dndsglob}
+library(ggbeeswarm)
+
+# Read raw data from dNdScv results
+dnds_global <- read.csv("../data/snps/rev02_dnds_global_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+print(dnds_global)
+
+# Plot global dN/dS ratios per sample
+snp_plot_global <- dnds_global %>%
+  ggplot(aes(x = mle, y = reorder(name, mle), color = name)) +
+  geom_pointrange(aes(xmin = cilow, xmax = cihigh), alpha = 0.8) +
+  scale_color_manual(values = c("#66c2a5", "#8da0cb", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5", "#66c2a5"), guide = "none") +
+  labs(x = "Global dN/dS ratios", y = "Sample", title = "Global dN/dS ratios (dNdScv)") +
+  theme_minimal() +
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5))
+snp_plot_global
 ```
 
-The model tends to be more rigorous by using inStrain at ANI of 97% (no MAGs with global positive selection were detected).
+# Global dN/dS per-MAGs (top three phyla)
 
+```{r dndss15}
+library(ggpubr)
 
-# Global dN/dS of S15 MAGs vs all samples
+# Read raw data from dNdScv results
+dnds_dndscv <- read.csv("../data/snps/rev02_dnds_sam_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+head(dnds_dndscv)
 
-Next, we compared the global ratios of the 44 MAGs from S15 (at default ANI: 95%) with the results of this sample mapped across all samples (eight metagenomes; ANI 97% and 98%).
+# Normalize dN/dS per-gene by contamination
+dnds_mags_sam <- dnds_dndscv %>%
+  dplyr::mutate(dnds_adj = wmis_cv * (1 - contamination / 100)) %>%
+  dplyr::group_by(sample, phylum, bin) %>% #separate by samples
+  dplyr::summarise(snps = n(), dnds_sum = sum(dnds_adj), .groups = "drop") %>%
+  ungroup() %>%
+  dplyr::mutate(dnds_glob = dnds_sum / snps / 8) #divide by total genes/samples
+head(dnds_mags_sam)
 
-```{r s15dnds}
-#library(ggbeeswarm)
-# Read the data from each dNdScv run:
+# Group genes across samples for a merged faceting
+dnds_mags_sam_all <- dnds_mags_sam %>%
+  dplyr::group_by(phylum, bin) %>%
+  dplyr::summarise(dnds = mean(dnds_glob), .groups = "drop") %>%
+  dplyr::rename(dnds_glob = dnds) %>%
+  dplyr::mutate(sample = "All samples") %>%
+  relocate(sample, .before = phylum)
+nrow(dnds_mags_sam_all)
+dnds_mags_sam_all <- rbind(dnds_mags_sam %>% dplyr::select(sample, phylum, bin, dnds_glob), dnds_mags_sam_all)
+
+# Boxplot MAGs dN/dS ratios
+snp_plot_mags <- dnds_mags_sam_all %>%
+  dplyr::mutate(sample = factor(sample, levels = c("S1", "S2", "S3", "S5", "S7", "S15", "S17", "S28", "All samples"))) %>% #set order of samples
+  dplyr::filter(phylum == "Acidobacteriota" | phylum == "Actinobacteriota" | phylum == "Proteobacteria") %>% #top 3 phyla
+  dplyr::mutate(phylum = factor(phylum, levels = c("Proteobacteria", "Acidobacteriota", "Actinobacteriota"))) %>%
+  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
+  geom_quasirandom(size = 1.5, alpha = 0.85) +
+  geom_boxplot(fill = NA, outlier.size = 0, outliers = FALSE) +
+  scale_color_manual(values = c("#b15928", "#a6cee3", "#98d277"), guide = "none") +
+  #geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
+  #stat_compare_means(method = "t.test", label = "p.format", vjust = 0.25, size = 2,
+  #                   comparisons = list(c("Proteobacteria", "Acidobacteriota"),
+  #                                      c("Proteobacteria", "Actinobacteriota"),
+  #                                      c("Acidobacteriota", "Actinobacteriota")),
+  #                   bracket.size = 0.25, tip.length = 0.01) + #label.y = c(1.05, 1.15, 1.25),
+  labs(x = "Phylum", y = "MAG dN/dS ratio", title = "MAGs per-sample") +
+  facet_wrap(~ sample) + ylim(c(0,1))+
+  theme_minimal() +
+  theme(axis.line.x.bottom = element_line(linewidth = 0.5),
+        axis.line.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+snp_plot_mags
+
+# Extract bins from S15 according to their equivalence after dRep (dereplication)
+dnds_mags_s15 <- dnds_mags_sam %>%
+  dplyr::filter(grepl("S15.", bin) |
+                bin == "SPAdes-MetaBAT2Refined-S5.34" |
+                bin == "SPAdes-MetaBAT2Refined-S3.159_sub" |
+                bin == "SPAdes-MetaBAT2Refined-S5.59" |
+                bin == "SPAdes-MetaBAT2Refined-S7.123_sub" |
+                bin == "SPAdes-MetaBAT2Refined-S17.18" |
+                bin == "SPAdes-MetaBAT2Refined-S2.122_sub" |
+                bin == "SPAdes-MetaBAT2Refined-S5.72" |
+                bin == "SPAdes-MaxBin2Refined-S3.007_sub")
+dnds_mags_s15 <- dnds_mags_s15 %>%
+  dplyr::mutate(bin = case_when(
+    bin == "SPAdes-MetaBAT2Refined-S5.34" ~ "SPAdes-MetaBAT2Refined-S15.45",
+    bin == "SPAdes-MetaBAT2Refined-S3.159_sub" ~ "SPAdes-MaxBin2Refined-S15.001_sub",
+    bin == "SPAdes-MetaBAT2Refined-S5.59" ~ "SPAdes-MetaBAT2Refined-S15.15_sub",
+    bin == "SPAdes-MetaBAT2Refined-S7.123_sub" ~ "SPAdes-MaxBin2Refined-S15.019_sub",
+    bin == "SPAdes-MetaBAT2Refined-S17.18" ~ "SPAdes-MetaBAT2Refined-S15.14",
+    bin == "SPAdes-MetaBAT2Refined-S2.122_sub" ~ "SPAdes-MetaBAT2Refined-S15.68",
+    bin == "SPAdes-MetaBAT2Refined-S5.72" ~ "SPAdes-MetaBAT2Refined-S15.20",
+    bin == "SPAdes-MaxBin2Refined-S3.007_sub" ~ "SPAdes-MetaBAT2Refined-S15.18",
+    TRUE ~ bin))
+head(dnds_mags_s15)
+
+# Load dN/dS for S15 MAGs and add filtered bins
 dnds_s15 <- read.csv("../data/snps/dnds_S15_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-dnds_s15_is97 <- read.csv("../data/snps/dnds_S15_merged_is97.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
-dnds_s15_is98 <- read.csv("../data/snps/dnds_S15_merged_is98.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+dnds_mags_s15 <- dnds_mags_s15 %>% dplyr::filter(sample == "S15")
+dim(dnds_mags_s15)
+dnds_mags_s15_add <- dnds_s15 %>%
+  dplyr::mutate(sample = "S15") %>%
+  relocate(sample, .before = phylum) %>%
+  dplyr::filter(!bin %in% dnds_mags_s15$bin)
+dnds_mags_s15 <- rbind(dnds_mags_s15, dnds_mags_s15_add)
+dim(dnds_mags_s15)
 
-# Boxplot for each dataset
-dnds_plot_1 <- dnds_s15 %>%
-  #dplyr::mutate(mag = "mag") %>%
-  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
-  geom_boxplot(fill = NA, outlier.size = 0) +
-  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
-  #geom_quasirandom(alpha = 0.5, size = 2) +
-  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 95%)") +
-  guides(color = "none") +
+# Prepare data with ratios of S15 vs all samples
+dnds_mags_s15_corr <- dnds_mags_s15 %>%
+  dplyr::select(phylum, bin, dnds_glob) %>%
+  dplyr::rename(dnds_all = dnds_glob) %>%
+  left_join(dplyr::select(dnds_s15, bin, dnds_glob), by = "bin") %>%
+  dplyr::rename(dnds_s15 = dnds_glob)
+head(dnds_mags_s15_corr)
+
+# Now, we can correlate the 44 MAGs from S15 across all samples
+dnds_s15_corr <- lm(dnds_s15 ~ dnds_all, data = dnds_mags_s15_corr)
+#dnds_s15_corr_rs <- summary(dnds_s15_corr)$r.squared
+#dnds_s15_corr_pv <- summary(dnds_s15_corr)$coefficients[2, 4]
+
+# Run an additional correlation (p-test)
+dnds_s15_cortest <- cor.test(dnds_mags_s15_corr$dnds_s15, dnds_mags_s15_corr$dnds_all,
+                             method = "spearman", conf.level = 0.95)
+#dnds_s15_cortest
+
+# Plot linear model
+snp_plot_mags_lm <- dnds_mags_s15_corr %>%
+  ggplot(aes(x = dnds_s15, y = dnds_all, color = phylum)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue", linewidth = 0.5) +
+  scale_color_manual(values = c("#A6CEE3", "#98D277", "#F16667", "#FE982C", "#7D54A5", "#B15928")) +
+  scale_y_continuous(limits = c(0, 0.8)) +
+  labs(x = "dN/dS (S15)", y = "dN/dS (S15 across all samples)", title = "dN/dS ratios of S15 MAGs") +
+  annotate("text", x = 0.2, y = 0.7, color = "black", size = 5, hjust = 0,
+           label = paste0("Spearman's rank correlation = ", round(dnds_s15_cortest$estimate, 3), 
+                          "\nP-value = ", signif(dnds_s15_cortest$p.value, 3))) +
   theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+  theme(axis.line = element_line(linewidth = 0.5),
+        axis.ticks.y.left = element_line(linewidth = 0.5),
+        axis.ticks.x.bottom = element_line(linewidth = 0.5),legend.position = "bottom")
+snp_plot_mags_lm
 
-dnds_plot_2 <- dnds_s15_is97 %>%
-  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
-  geom_boxplot(fill = NA, outlier.size = 0) +
-  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
-  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 97%)") +
-  guides(color = "none") +
-  theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 
-dnds_plot_3 <- dnds_s15_is98 %>%
-  ggplot(aes(x = phylum, y = dnds_glob, color = phylum)) +
-  geom_boxplot(fill = NA, outlier.size = 0) +
-  geom_jitter(width = 0.1, size = 2, alpha = 0.7) +
-  labs(x = "", y = "Global dN/dS ratios", title = "S15 MAGs (ANI 98%)") +
-  guides(color = "none") +
-  theme_minimal() +
-  theme(axis.line = element_line(size = 0.5),
-        axis.ticks.x.bottom = element_line(size = 0.5),
-        axis.ticks.y.left = element_line(size = 0.5),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
-
-## We merge and show them
-dnds_plot_1 + dnds_plot_2 + dnds_plot_3
 ```
 
-We do observe that the selection pressure tends to increase at higher ANI percentages.
+Spearman p-test exhibit a correlation coefficient of 0.612 (strong correlation) with a significant p-value of 1.575e-05.
 
 
+# Intrinsic mining genes under negative selection (NS)
+
+```{r dndsns}
+library(ggpubr)
+
+# Read results from dNdScv
+dnds_dndscv <- read.csv("../data/snps/rev02_dnds_sam_is95.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+# Get genes under NS
+dnds_mags_nsgenes <- dnds_dndscv %>% dplyr::filter(wmis_cv < 1 & wmis_cv != 0)
+
+# Read list with intrinsic genes extracted from the annotation (GFF file)
+snp_cds_genes <- read.csv("../data/snps/selected_cds_metals.txt", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+# Discard unknown gene names
+snp_cds_genes <- snp_cds_genes %>% dplyr::filter(nchar(name) < 14)
+
+# Subset list to those genes under NS (the same `gene_id` could appear in different samples)
+dnds_mags_nsgenes_sub <- snp_cds_genes[snp_cds_genes$gene_id %in% dnds_mags_nsgenes$gene_name, ]
+dnds_mags_nsgenes_sub <- left_join(dnds_mags_nsgenes_sub, dnds_mags_nsgenes, by = join_by(gene_id == gene_name))
+
+# Separate genes by pathway
+fx_snpGene2Path <- function(g) {
+  if (grepl("copper", g, ignore.case = TRUE))
+    return("Copper")
+  if (grepl("iron", g, ignore.case = TRUE))
+    return("Iron")
+  if (grepl("sulf|soxr", g, ignore.case = TRUE))
+    return("Sulfur")
+  else
+    return("Other")
+}
+snp_nspath <- vector()
+for (i in 1:nrow(dnds_mags_nsgenes_sub)) {
+	snp_nspath <- append(snp_nspath, fx_snpGene2Path(dnds_mags_nsgenes_sub$product[i]))
+}
+dnds_mags_nsgenes_sub$pathway <- snp_nspath
+dnds_mags_nsgenes_sub <- dnds_mags_nsgenes_sub %>% dplyr::filter(pathway != "Other")
+head(dnds_mags_nsgenes_sub)
+
+# Sort pathways and set colors
+dnds_ns_sort <- dnds_mags_nsgenes_sub %>%
+  dplyr::group_by(pathway) %>%
+  summarise(avg = mean(wmis_cv)) %>%
+  arrange(desc(avg))
+dnds_ns_sort$color <- c("#ddad3b", "#7f7f7f", "#8c2421")
+
+# Group genes across samples for a merged faceting
+dnds_mags_nsgenes_sub_all <- dnds_mags_nsgenes_sub %>% dplyr::mutate(sample = "All samples")
+dnds_mags_nsgenes_sub <- rbind(dnds_mags_nsgenes_sub, dnds_mags_nsgenes_sub_all)
+
+# Violin plot of all NS genes by pathway across samples
+snp_plot_ns <- dnds_mags_nsgenes_sub %>%
+  dplyr::mutate(sample = factor(sample, levels = c("S1", "S2", "S3", "S5", "S7", "S15", "S17", "S28", "All samples"))) %>% #set order of samples
+  ggviolin(x = "pathway", y = "wmis_cv", color = "pathway", shape = "pathway", add = "jitter",
+           order = dnds_ns_sort$pathway, palette = dnds_ns_sort$color,
+           legend = "none", size = 0.5, add.params = list(size = 1, alpha = 0.75)) +
+  geom_hline(yintercept = 1, linetype = 1, linewidth = 0.2) +
+  #stat_compare_means(method = "t.test", label = "p.signif", vjust = 0.25, size = 2,
+  #                  comparisons = list(c("Sulfur", "Iron"), c("Sulfur", "Copper"), c("Iron", "Copper")),
+  #                   label.y = c(1.1, 1.2, 1.3), bracket.size = 0.25, tip.length = 0.01) +
+  labs(x = "Pathway", y = "dN/dS ratio", title = "Mining genes under NS") +
+  facet_wrap(~ sample) +
+  theme(strip.background = element_blank()) 
+snp_plot_ns
+```
+
+The list of intrinsic mining genes (copper, iron, and sulfur proteins) are highly represented with negative selection pressure (dN/dS <1).
+
+
+
+```{r mergedndsp}
+(snp_plot_global|snp_plot_mags)/(snp_plot_mags_lm|snp_plot_ns) + plot_layout(widths = c(1, 2)) + plot_annotation(tag_levels = 'A')
+#library(patchwork)
+pdf("Reproducibility_of_seleccion_analysis.pdf",width=12,height = 10)
+(snp_plot_global|snp_plot_mags)/(snp_plot_mags_lm|snp_plot_ns) + plot_layout(widths = c(1, 2)) + plot_annotation(tag_levels = 'A')
+#(p1+p2) + 
+dev.off()
+
+png("Reproducibility_of_seleccion_analysis.png",width=800,height = 600)
+(snp_plot_global|snp_plot_mags)/(snp_plot_mags_lm|snp_plot_ns) + plot_layout(widths = c(1, 2)) + plot_annotation(tag_levels = 'A')
+#(p1+p2) + 
+dev.off()
+
+```
+Figure: Evaluation of selection results for S15 across eight mining samples.  
+(A) Global dN/dS ratios for S15 and seven additional mining samples confirm strong negative selection, demonstrating consistency across datasets.  
+(B) Global dN/dS estimates per MAG and sample further support strong negative selection, indicating that the observed patterns in S15 are also present in other mining samples.  
+(C) A Spearman correlation test comparing dN/dS estimations in S15 samples with those obtained from 250 dereplicated MAGs reveals a strong correlation (coefficient = 0.612) with a highly significant p-value of 1.575e-05, reinforcing the robustness of the observed selection patterns.  
+(D) Key mining-associated genes involved in copper, iron, and sulfur metabolism are consistently under strong negative selection (dN/dS < 1) in S15 and across other mining samples, highlighting evolutionary constraints in these functional pathways.
